@@ -6,6 +6,20 @@
     <title>ADMIN PANEL | MESSAGE rorraxy.com</title>
     <link rel="icon" type="image/png" href="https://pub-508ef1e45bab487aadde85a1dba202c4.r2.dev/im1024.jpg">
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="/ecosystem-core.js"></script>
+
+    <!-- কঠোর সিকিউরিটি গার্ড: ভেরিফাই এবং মাস্টার পাসওয়ার্ড দেওয়া না থাকলে সরাসরি index.html এ পাঠিয়ে দেবে -->
+    <script>
+        (function() {
+            const v1 = localStorage.getItem('rorraxy_admin_verified');
+            const v2 = localStorage.getItem('rorraxy_admin_authenticated_session');
+            const v3 = localStorage.getItem('rorraxy_master_key_passed');
+            if (v1 !== 'true' || v2 !== 'active' || v3 !== 'true') {
+                window.location.replace('/index.html');
+            }
+        })();
+    </script>
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800;900&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -32,20 +46,20 @@
 
     <!-- Admin Auth Overlay -->
     <div id="adminAuthOverlay" class="fixed inset-0 z-50 bg-[#030305] flex items-center justify-center p-4">
-        <div class="theme-card border border-amber-400/20 rounded-3xl p-8 max-w-md w-full space-y-6 text-center shadow-2xl">
+        <div class="theme-card border border-amber-400/25 rounded-3xl p-8 max-w-md w-full space-y-6 text-center shadow-2xl">
             <img src="https://pub-508ef1e45bab487aadde85a1dba202c4.r2.dev/im1024.jpg" class="w-20 h-20 rounded-full mx-auto object-cover border-2 border-amber-400/30">
             <div>
                 <h1 class="brand-title-font text-2xl font-bold gold-gradient-text">ADMIN PORTAL</h1>
                 <p class="text-[11px] text-gray-400 mt-1">rorraxy.com MESSAGE Control Center</p>
             </div>
             <div class="space-y-3 text-left">
-                <label class="text-[10px] font-bold text-amber-300 uppercase tracking-wider">Admin Security Passcode</label>
-                <input type="password" id="adminPassInput" placeholder="Enter admin passcode" class="w-full theme-input text-xs px-4 py-3.5 rounded-2xl text-white placeholder-gray-500 focus:outline-none border border-amber-400/20">
+                <label class="text-[10px] font-bold text-amber-300 uppercase tracking-wider">Master Security Passcode</label>
+                <input type="password" id="adminPassInput" placeholder="Enter rorraxy2026..." class="w-full theme-input text-xs px-4 py-3.5 rounded-2xl text-white placeholder-gray-500 focus:outline-none border border-amber-400/20">
             </div>
             <button onclick="verifyAdminLogin()" class="w-full py-4 gold-btn text-xs font-extrabold rounded-2xl shadow-lg uppercase tracking-wider cursor-pointer">
                 Access Dashboard
             </button>
-            <a href="/" class="text-[11px] text-gray-400 hover:text-amber-300 transition block">← Return to Messenger</a>
+            <a href="/dashboard.html" class="text-[11px] text-gray-400 hover:text-amber-300 transition block">← Return to Master Dashboard</a>
         </div>
     </div>
 
@@ -63,7 +77,7 @@
                 <i class="fa-solid fa-rotate"></i> <span>Refresh</span>
             </button>
             <button onclick="logoutAdmin()" class="px-4 py-2 rounded-xl bg-red-600/20 hover:bg-red-600/30 text-red-400 text-xs font-semibold cursor-pointer transition">
-                Logout
+                Lock Session
             </button>
         </div>
     </header>
@@ -156,21 +170,23 @@
 
         function verifyAdminLogin() {
             const pass = document.getElementById('adminPassInput')?.value.trim();
-            // ডিফল্ট সিক্রেট অ্যাডমিন পাসকোড: rorraxy2026 অথবা আপনার ইচ্ছামতো পরিবর্তন করতে পারেন
-            if (pass === 'rorraxy2026' || pass === 'admin123') {
+            // আপনার কঠোর মাস্টার পাসওয়ার্ড: rorraxy2026
+            if (pass === 'rorraxy2026') {
                 localStorage.setItem('message_admin_auth_v18', 'true');
                 document.getElementById('adminAuthOverlay').style.display = 'none';
                 loadAdminData();
                 showToast("Admin access granted!");
             } else {
-                showToast("Invalid admin passcode", true);
+                showToast("Invalid master passcode! Use rorraxy2026", true);
             }
         }
 
         function logoutAdmin() {
             localStorage.removeItem('message_admin_auth_v18');
-            document.getElementById('adminAuthOverlay').style.display = 'flex';
-            showToast("Logged out successfully");
+            localStorage.removeItem('rorraxy_admin_verified');
+            localStorage.removeItem('rorraxy_admin_authenticated_session');
+            localStorage.removeItem('rorraxy_master_key_passed');
+            window.location.replace('/index.html');
         }
 
         async function loadAdminData() {
