@@ -44,7 +44,7 @@
         
         .auth-card {
             background: var(--card-retail);
-            border: 1px solid rgba(255, 42, 133, 0.12);
+            border: 1px solid rgba(255, 42, 133, 0.15);
             border-radius: 24px;
             width: 100%;
             padding: 38px 26px;
@@ -53,16 +53,16 @@
             gap: 20px;
             text-align: center;
             backdrop-filter: blur(10px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.9);
         }
 
         .auth-logo {
-            width: 130px;
+            width: 120px;
             height: auto;
-            max-height: 130px;
+            max-height: 120px;
             object-fit: contain;
             margin: 0 auto;
-            background: transparent !important;
-            filter: drop-shadow(0 6px 20px rgba(255, 42, 133, 0.2)) !important;
+            filter: drop-shadow(0 6px 20px rgba(255, 42, 133, 0.25)) !important;
         }
 
         .auth-title {
@@ -95,11 +95,10 @@
             letter-spacing: 0.8px;
         }
 
-        /* সফট পিওর ব্ল্যাক ইনপুট ফিল্ড (বর্ডার ছাড়া) */
         .form-control {
             width: 100%;
             background: #000000;
-            border: none;
+            border: 1px solid rgba(212, 175, 55, 0.15);
             border-radius: 14px;
             padding: 14px 16px;
             color: var(--text-white);
@@ -113,6 +112,7 @@
         }
 
         .form-control:focus {
+            border-color: var(--gold-solid);
             background: #030305;
         }
 
@@ -147,31 +147,12 @@
             letter-spacing: 0.8px;
             transition: transform 0.15s ease, filter 0.2s ease;
             margin-top: 4px;
-            text-decoration: none;
-            display: inline-block;
             text-align: center;
         }
 
         .auth-btn:hover { filter: brightness(1.08); transform: translateY(-1px); }
         .auth-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
 
-        .status-msg {
-            font-size: 0.72rem;
-            text-transform: none;
-            margin-top: -2px;
-            display: none;
-            text-align: center;
-        }
-        .status-msg.error { color: var(--required-red); }
-        .status-msg.success { color: #2ecc71; }
-
-        .action-link-box {
-            display: none;
-            margin-top: 6px;
-            text-align: center;
-        }
-
-        /* চূড়ান্ত পিংক কালার এন্টার ড্যাশবোর্ড বাটন */
         .verify-action-btn {
             width: 100%;
             background: var(--pink-solid);
@@ -184,7 +165,6 @@
             cursor: pointer;
             text-transform: uppercase;
             letter-spacing: 0.8px;
-            text-decoration: none;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -199,18 +179,44 @@
             box-shadow: 0 0 35px rgba(255, 42, 133, 0.6);
         }
 
+        .status-msg {
+            font-size: 0.72rem;
+            text-transform: none;
+            margin-top: -2px;
+            display: none;
+            text-align: center;
+            font-weight: 600;
+        }
+        .status-msg.error { color: var(--required-red); }
+        .status-msg.success { color: #2ecc71; }
+
+        #step2PasswordForm {
+            display: none;
+            animation: fadeIn 0.35s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
         @media (max-width: 480px) {
             .auth-card { padding: 30px 18px; gap: 16px; }
             .auth-title { font-size: 1.05rem; }
-            .auth-logo { width: 110px; }
+            .auth-logo { width: 105px; }
         }
     </style>
 </head>
 <body>
 
     <script>
-        if (localStorage.getItem('rorraxy_admin_verified') === 'true') {
-            window.location.href = 'dashboard.html';
+        // যদি আগে থেকেই দুটি ধাপই কঠোরভাবে ভেরিফাই করা থাকে, তবে সরাসরি ড্যাশবোর্ডে যাবে
+        if (
+            localStorage.getItem('rorraxy_admin_verified') === 'true' &&
+            localStorage.getItem('rorraxy_admin_authenticated_session') === 'active' &&
+            localStorage.getItem('rorraxy_master_key_passed') === 'true'
+        ) {
+            window.location.replace('/dashboard.html');
         }
     </script>
 
@@ -218,41 +224,56 @@
         <div class="auth-card">
             <img src="https://pub-508ef1e45bab487aadde85a1dba202c4.r2.dev/rorraxyfree/mr%20masudar%20logo%20(3).png" alt="rorraxy logo" class="auth-logo">
             
-            <h2 class="auth-title">ADMIN VERIFICATION</h2>
+            <h2 class="auth-title" id="portalHeading">STEP 1: ADMIN VERIFICATION</h2>
 
-            <!-- Authentication Form -->
+            <!-- ধাপ ১: ইমেইল ভেরিফিকেশন ফর্ম -->
             <form id="magicLinkForm" class="auth-form">
                 <div class="form-group">
-                    <label>EMAIL ADDRESS <span style="color:var(--required-red)">*</span></label>
-                    <input type="email" class="form-control" id="adminEmail" placeholder="Gmail, Yahoo, Outlook, Apple..." required style="text-transform: none;" autocomplete="email">
-                    <span class="email-hint"><i class="fa-solid fa-lock" style="color: #ff2a85;"></i> All verified emails supported</span>
+                    <label>ADMIN EMAIL ADDRESS <span style="color:var(--required-red)">*</span></label>
+                    <input type="email" class="form-control" id="adminEmail" placeholder="Enter authorized email..." required autocomplete="email">
+                    <span class="email-hint"><i class="fa-solid fa-shield-halved" style="color: #ff2a85;"></i> Step 1 of 2: Email Identity Check</span>
                 </div>
                 
                 <div id="formStatus" class="status-msg"></div>
-                
-                <!-- সফলভাবে ভেরিফাই হওয়ার পর দৃশ্যমান পিংক বাটন -->
-                <div id="actionLinkBox" class="action-link-box">
-                    <a id="verifyDirectBtn" href="#" target="_blank" class="verify-action-btn">
-                        <i class="fa-solid fa-arrow-right-to-bracket"></i> ENTER DASHBOARD
-                    </a>
+
+                <button type="submit" class="auth-btn" id="sendLinkBtn">VERIFY EMAIL & PROCEED</button>
+            </form>
+
+            <!-- ধাপ ২: অটোমেটিক মাস্টার পাসওয়ার্ড ফর্ম -->
+            <form id="step2PasswordForm" class="auth-form">
+                <div class="form-group">
+                    <label>SECURITY MASTER PASSWORD <span style="color:var(--required-red)">*</span></label>
+                    <input type="password" class="form-control" id="masterPasswordInput" placeholder="Enter master security password..." required autocomplete="off">
+                    <span class="email-hint"><i class="fa-solid fa-key" style="color: #d4af37;"></i> Step 2 of 2: Strict Security Lock</span>
                 </div>
 
-                <button type="submit" class="auth-btn" id="sendLinkBtn">CONTINUE TO DASHBOARD</button>
+                <div id="passStatus" class="status-msg"></div>
+
+                <button type="submit" class="verify-action-btn" id="unlockDashboardBtn">
+                    <i class="fa-solid fa-lock-open"></i> UNLOCK & ENTER DASHBOARD
+                </button>
             </form>
         </div>
     </div>
 
     <script>
         const WORKER_URL = "https://email.rorraxybd.workers.dev";
+        const STRICT_MASTER_PASS = "rorraxy2026"; // আপনার নির্ধারিত পাসওয়ার্ড
 
         const magicLinkForm = document.getElementById('magicLinkForm');
+        const step2PasswordForm = document.getElementById('step2PasswordForm');
+        const portalHeading = document.getElementById('portalHeading');
+        
         const adminEmailInput = document.getElementById('adminEmail');
         const sendLinkBtn = document.getElementById('sendLinkBtn');
         const formStatus = document.getElementById('formStatus');
-        const actionLinkBox = document.getElementById('actionLinkBox');
-        const verifyDirectBtn = document.getElementById('verifyDirectBtn');
 
-        // ফেক বা টেম্পোরারি মেইল ব্লকার ফাংশন
+        const masterPasswordInput = document.getElementById('masterPasswordInput');
+        const passStatus = document.getElementById('passStatus');
+        const unlockDashboardBtn = document.getElementById('unlockDashboardBtn');
+
+        let isStep1Passed = false;
+
         function isAuthenticEmail(email) {
             const blockedDomains = ['tempmail', '10minutemail', 'throwaway', 'mailinator', 'yopmail', 'disposable', 'trashmail'];
             const domain = email.split('@')[1];
@@ -269,6 +290,7 @@
             element.style.display = 'block';
         }
 
+        // ধাপ ১ সাবমিট: ইমেইল ভেরিফাই
         magicLinkForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             const email = adminEmailInput.value.trim().toLowerCase();
@@ -276,14 +298,13 @@
             if (!email) return;
 
             if (!isAuthenticEmail(email)) {
-                showStatus(formStatus, 'Temporary or fake emails are not allowed.', true);
+                showStatus(formStatus, 'Temporary or fake emails are strictly blocked.', true);
                 return;
             }
 
             sendLinkBtn.disabled = true;
-            sendLinkBtn.innerText = "VERIFYING...";
+            sendLinkBtn.innerText = "VERIFYING IDENTITY...";
             formStatus.style.display = 'none';
-            actionLinkBox.style.display = 'none';
 
             try {
                 const response = await fetch(`${WORKER_URL}/api/send-magic-link`, {
@@ -295,23 +316,57 @@
                 const data = await response.json();
 
                 if (response.ok && data.success) {
-                    showStatus(formStatus, 'Verified successfully! Click below:', false);
-                    
-                    if (data.magicLink) {
-                        verifyDirectBtn.href = data.magicLink;
-                        actionLinkBox.style.display = 'block';
-                    }
-                    
-                    sendLinkBtn.style.display = 'none';
+                    isStep1Passed = true;
+                    localStorage.setItem('rorraxy_admin_verified', 'true');
+                    localStorage.setItem('rorraxy_admin_email', email);
+
+                    // ধাপ ১ লুকিয়ে অটোমেটিক ধাপ ২ (পাসওয়ার্ড) চালু করা
+                    magicLinkForm.style.display = 'none';
+                    portalHeading.innerText = "STEP 2: SECURITY LOCK";
+                    step2PasswordForm.style.display = 'flex';
+                    masterPasswordInput.focus();
                 } else {
-                    showStatus(formStatus, data.error || 'Verification failed. Try again.', true);
+                    showStatus(formStatus, data.error || 'Email verification failed. Access denied.', true);
                     sendLinkBtn.disabled = false;
-                    sendLinkBtn.innerText = "CONTINUE TO DASHBOARD";
+                    sendLinkBtn.innerText = "VERIFY EMAIL & PROCEED";
                 }
             } catch (err) {
-                showStatus(formStatus, 'Network error! Please check connection.', true);
+                showStatus(formStatus, 'Network error! Could not verify server.', true);
                 sendLinkBtn.disabled = false;
-                sendLinkBtn.innerText = "CONTINUE TO DASHBOARD";
+                sendLinkBtn.innerText = "VERIFY EMAIL & PROCEED";
+            }
+        });
+
+        // ধাপ ২ সাবমিট: মাস্টার পাসওয়ার্ড চেক
+        step2PasswordForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            
+            if (!isStep1Passed && localStorage.getItem('rorraxy_admin_verified') !== 'true') {
+                window.location.reload();
+                return;
+            }
+
+            const enteredPass = masterPasswordInput.value.trim();
+
+            if (enteredPass === STRICT_MASTER_PASS) {
+                unlockDashboardBtn.disabled = true;
+                unlockDashboardBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> UNLOCKING...';
+                
+                // কঠোর সেশন টোকেন সেট করা
+                localStorage.setItem('rorraxy_admin_verified', 'true');
+                localStorage.setItem('rorraxy_admin_authenticated_session', 'active');
+                localStorage.setItem('rorraxy_master_key_passed', 'true');
+                localStorage.setItem('rorraxy_session_timestamp', Date.now().toString());
+
+                showStatus(passStatus, 'Access Granted! Entering Dashboard...', false);
+
+                setTimeout(() => {
+                    window.location.replace('/dashboard.html');
+                }, 700);
+            } else {
+                showStatus(passStatus, 'Incorrect Master Password! Access Denied.', true);
+                masterPasswordInput.value = '';
+                masterPasswordInput.focus();
             }
         });
     </script>
