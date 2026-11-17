@@ -321,7 +321,7 @@
             cursor: pointer;
         }
 
-        /* Tabs inside Modal for Alibaba/Amazon Style Enterprise Experience */
+        /* Tabs inside Modal */
         .modal-tabs {
             display: flex;
             gap: 15px;
@@ -374,7 +374,6 @@
             word-break: break-all;
         }
 
-        /* Financial & Shipment Log Table inside Modal */
         .sub-table {
             width: 100%;
             margin-top: 10px;
@@ -477,7 +476,7 @@
             </div>
             <div class="stat-card">
                 <h3>Total Escrow Balance</h3>
-                <div class="value" id="stat-escrow" style="color: var(--accent-blue);">৳0.00</div>
+                <div class="value" id="stat-escrow" style="color: var(--accent-blue);">৳48,250</div>
             </div>
         </div>
 
@@ -544,9 +543,7 @@
 
             <!-- Tab 1: Profile & Documents -->
             <div id="tab-profile" class="tab-pane active">
-                <div class="info-grid" id="modalInfoBody">
-                    <!-- Injected via JS -->
-                </div>
+                <div class="info-grid" id="modalInfoBody"></div>
             </div>
 
             <!-- Tab 2: Payments & Escrow Ledger -->
@@ -631,7 +628,7 @@
             document.getElementById('stat-total').innerText = allSellersData.length;
             document.getElementById('stat-pending').innerText = allSellersData.filter(s => (s.admin_approval_status || 'pending') === 'pending').length;
             document.getElementById('stat-approved').innerText = allSellersData.filter(s => s.admin_approval_status === 'approved').length;
-            document.getElementById('stat-escrow').innerText = '৳48,250'; // Calculated summary
+            document.getElementById('stat-escrow').innerText = '৳48,250';
         }
 
         function filterSellers() {
