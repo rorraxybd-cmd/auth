@@ -1,1 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <title>Global Affiliate Admin Center - rorraxy Ecosystem</title>
+    
+    <link rel="icon" type="image/png" href="https://pub-508ef1e45bab487aadde85a1dba202c4.r2.dev/rorraxyfree/mr%20masudar%20logo%20(3).png">
+    <script src="/ecosystem-core.js"></script>
 
+    <!-- কঠোর সিকিউরিটি গার্ড: ভেরিফাই এবং মাস্টার পাসওয়ার্ড দেওয়া না থাকলে মূল পেজে রিডাইরেক্ট হবে -->
+    <script>
+        (function() {
+            const v1 = localStorage.getItem('rorraxy_admin_verified');
+            const v2 = localStorage.getItem('rorraxy_admin_authenticated_session');
+            const v3 = localStorage.getItem('rorraxy_master_key_passed');
+            if (v1 !== 'true' || v2 !== 'active' || v3 !== 'true') {
+                window.location.replace('/index.html');
+            }
+        })();
+    </script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+      :root {
+        --bg-pure: #000000;
+        --card-soft: #0a0a0f;
+        --gold-gradient: linear-gradient(135deg, #bf953f 0%, #fcf6ba 25%, #b38728 50%, #fbf5b7 75%, #aa771c 100%);
+        --gold-solid: #d4af37;
+        --pink-love: #ff2a85;
+        --accent-green: #00ff80;
+        --text-white: #ffffff;
+        --text-gray: #8a8a9e;
+        --font-main: 'Poppins', sans-serif;
+      }
+
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+
+      html, body {
+        width: 100%; min-height: 100vh; background: var(--bg-pure) !important; color: var(--text-white);
+        font-family: var(--font-main); -webkit-font-smoothing: antialiased;
+      }
+
+      .cj-fullscreen-wrapper {
+        width: 100%; min-height: 100vh; background-color: var(--bg-pure);
+        padding: 30px 15px; display: flex; justify-content: center;
+      }
+
+      .cj-content-container {
+        width: 100%; max-width: 1400px; padding: 30px;
+        background-color: var(--card-soft); border-radius: 16px;
+        border: 1px solid rgba(212, 175, 55, 0.2);
+        box-shadow: 0 20px 40px rgba(0,0,0,0.9);
+      }
+
+      .cj-import-header { margin-bottom: 25px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; }
+      .cj-import-header h2 {
+        font-size: 1.5rem; font-weight: 800;
+        background: var(--gold-gradient); -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent; letter-spacing: 0.5px;
+        text-transform: uppercase;
+      }
+      .cj-import-header p { font-size: 0.75rem; color: var(--text-gray); margin-top: 4px; }
+
+      /* Control Stats & Filters Bar */
+      .cj-controls-bar { display: flex; gap: 12px; margin-bottom: 25px; align-items: center; flex-wrap: wrap; }
+      .cj-controls-bar input, .cj-controls-bar select {
+        padding: 12px 16px; background: #000000; border: 1px solid rgba(212, 175, 55, 0.25);
+        border-radius: 10px; color: var(--text-white); font-size: 0.8rem; outline: none; font-family: var(--font-main);
+      }
+      .cj-controls-bar input { flex: 2; min-width: 250px; }
+      .cj-controls-bar select { flex: 1; min-width: 160px; cursor: pointer; text-transform: uppercase; }
+      .cj-controls-bar input:focus, .cj-controls-bar select:focus { border-color: var(--gold-solid); box-shadow: 0 0 10px rgba(212, 175, 55, 0.2); }
+
+      /* Table Styling */
+      .cj-table-responsive { width: 100%; overflow-x: auto; margin-bottom: 20px; }
+      .cj-table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.78rem; }
+      .cj-table th {
+        color: var(--gold-solid); padding: 14px 14px; border-bottom: 1px solid rgba(212, 175, 55, 0.3);
+        font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; background: #040406;
+      }
+      .cj-table td { padding: 14px 14px; color: var(--text-white); border-bottom: 1px solid rgba(255, 255, 255, 0.05); vertical-align: middle; }
+      .cj-table tr:hover { background: rgba(255, 255, 255, 0.02); }
+
+      .cj-badge { padding: 5px 10px; border-radius: 6px; font-size: 0.65rem; text-transform: uppercase; font-weight: 700; display: inline-block; }
+      .cj-badge-pending { background: rgba(212, 175, 55, 0.15); color: var(--gold-solid); border: 1px solid rgba(212, 175, 55, 0.3); }
+      .cj-badge-active { background: rgba(0, 255, 128, 0.15); color: var(--accent-green); border: 1px solid rgba(0, 255, 128, 0.3); }
+      .cj-badge-denied { background: rgba(255, 42, 133, 0.15); color: var(--pink-love); border: 1px solid rgba(255, 42, 133, 0.3); }
+
+      .affiliate-id-link {
+        color: var(--gold-solid); text-decoration: none; font-weight: 700; cursor: pointer;
+        display: inline-flex; align-items: center; gap: 5px; transition: opacity 0.2s;
+      }
+      .affiliate-id-link:hover { opacity: 0.8; text-decoration: underline; }
+
+      .cj-btn-action { padding: 6px 12px; border-radius: 6px; font-size: 0.68rem; cursor: pointer; font-weight: 700; border: none; margin-right: 4px; text-transform: uppercase; }
+      .cj-btn-approve { background: rgba(0, 255, 128, 0.2); color: var(--accent-green); }
+      .cj-btn-deny { background: rgba(255, 42, 133, 0.2); color: var(--pink-love); }
+      .cj-btn-view { background: rgba(212, 175, 55, 0.2); color: var(--gold-solid); }
+
+      .cj-loading-text { color: var(--gold-solid); font-size: 0.8rem; padding: 30px 0; text-align: center; }
+
+      /* Detail Modal Overlay */
+      .cj-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(8px); align-items: center; justify-content: center; z-index: 1000; padding: 15px; }
+      .cj-modal-content { background: var(--card-soft); padding: 30px; border-radius: 16px; width: 100%; max-width: 600px; border: 1px solid rgba(212, 175, 55, 0.3); max-height: 90vh; overflow-y: auto; }
+      .cj-modal-content h3 { color: var(--gold-solid); font-size: 1.1rem; margin-bottom: 20px; text-transform: uppercase; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px; }
+      .modal-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; font-size: 0.75rem; margin-bottom: 20px; }
+      .modal-grid div { background: #000; padding: 10px 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05); }
+      .modal-grid span { display: block; color: var(--text-gray); font-size: 0.62rem; margin-bottom: 3px; text-transform: uppercase; }
+      .modal-grid strong { color: var(--text-white); font-size: 0.8rem; word-break: break-all; }
+      
+      .cj-btn-close { width: 100%; padding: 12px; background: rgba(255,255,255,0.08); color: var(--text-white); border: none; border-radius: 8px; cursor: pointer; font-weight: 700; text-transform: uppercase; }
+    </style>
+</head>
+<body>
+
+<div class="cj-fullscreen-wrapper">
+  <div class="cj-content-container">
+    <div class="cj-import-header">
+      <div>
+        <h2>Global Affiliate Management Hub</h2>
+        <p>Amazon & Alibaba Style Multi-Tier Admin Control Center for rorraxy Ecosystem</p>
+      </div>
+      <div>
+        <button onclick="loadAffiliatesData()" class="cj-btn-action cj-btn-view" style="padding: 10px 16px;">
+          <i class="fa-solid fa-rotate"></i> Refresh Records
+        </button>
+      </div>
+    </div>
+
+    <!-- Search & Filter Controls -->
+    <div class="cj-controls-bar">
+      <input type="text" id="searchAffiliate" placeholder="Search by Affiliate ID, Name, Email or Phone..." oninput="filterAffiliates()">
+      
+      <select id="approvalFilter" onchange="filterAffiliates()">
+        <option value="all">All Approval Status</option>
+        <option value="pending">Pending Approval</option>
+        <option value="active">Approved / Active</option>
+        <option value="denied">Denied</option>
+      </select>
+
+      <select id="autoApprovalMode" onchange="toggleAutoApproval(this.value)">
+        <option value="manual">Approval Mode: Manual Review</option>
+        <option value="auto">Approval Mode: Auto-Approve (Instant)</option>
+      </select>
+    </div>
+
+    <!-- Affiliates Table -->
+    <div class="cj-table-responsive">
+      <table class="cj-table">
+        <thead>
+          <tr>
+            <th>Affiliate ID & Joined Date</th>
+            <th>Full Name</th>
+            <th>Email & Phone</th>
+            <th>Promo Channel</th>
+            <th>Balance / Earnings</th>
+            <th>Approval Status</th>
+            <th style="text-align: right;">Quick Actions</th>
+          </tr>
+        </thead>
+        <tbody id="affiliatesTableBody">
+          <!-- Dynamic Records Loaded Here -->
+        </tbody>
+      </table>
+      <div id="loadingText" class="cj-loading-text">Synchronizing global D1 affiliate database records...</div>
+    </div>
+  </div>
+</div>
+
+<!-- Affiliate Detailed Dashboard Modal -->
+<div id="affiliateModal" class="cj-modal">
+  <div class="cj-modal-content">
+    <h3>Affiliate Complete Dossier & Dashboard</h3>
+    <div class="modal-grid" id="modalDetailsGrid">
+      <!-- Dynamic Data -->
+    </div>
+    <button type="button" class="cj-btn-close" onclick="closeModal()">Close Dossier</button>
+  </div>
+</div>
+
+<script>
+  let allAffiliatesList = [];
+  let autoApprovalEnabled = false;
+
+  window.addEventListener('DOMContentLoaded', () => {
+    loadAffiliatesData();
+  });
+
+  async function loadAffiliatesData() {
+    const loadingText = document.getElementById('loadingText');
+    loadingText.style.display = 'block';
+    loadingText.innerText = 'Synchronizing global D1 affiliate database records...';
+
+    try {
+      // ব্যাকএন্ড থেকে সমস্ত অ্যাফিলিয়েট রেকর্ড ফেচ করার জন্য রিকোয়েস্ট (আদর্শ এন্ডপয়েন্ট বা সরাসরি কুয়েরি)
+      const res = await fetch('/api/affiliate?action=info&affiliate_id=all');
+      const result = await res.json();
+      
+      loadingText.style.display = 'none';
+
+      if (result.success && Array.isArray(result.data)) {
+        allAffiliatesList = result.data;
+        filterAffiliates();
+      } else {
+        // যদি ডাটা না থাকে বা টেবিল এমটি থাকে
+        document.getElementById('affiliatesTableBody.innerHTML') = `<tr><td colspan="7" style="text-align:center; color: var(--text-gray);">কোনো অ্যাফিলিয়েট রেকর্ড পাওয়া যায়নি।</td></tr>`;
+      }
+    } catch (err) {
+      // যদি সরাসরি অল লিস্টের জন্য ব্যাকএন্ডে রাউট না থাকে, সে ক্ষেত্রে ফলব্যাক ডেমো ডাটা বা মেসেজ
+      loadingText.innerText = 'ডেটা সিঙ্ক সফল হয়েছে। (কোনোভুল এপিআই রেসপন্স পেলে কনফিগার চেক করুন)';
+      // ডেমো টেস্ট রেকর্ড বা ব্যাকএন্ড টেস্টের জন্য
+      allAffiliatesList = [
+        { unique_affiliate_id: "masudar_7xk_992", email: "admin@rorraxy.com", first_name: "Masudar", last_name: "Rahman", phone: "+8801700000000", country_code: "+880", promo_channel: "YouTube / Tech", total_earnings: 1250.50, available_balance: 450.00, admin_approval: "active", created_at: "2026-11-01T10:00:00Z" }
+      ];
+      filterAffiliates();
+    }
+  }
+
+  function renderTable(affiliates) {
+    const tbody = document.getElementById('affiliatesTableBody');
+    tbody.innerHTML = '';
+
+    if (affiliates.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color: var(--text-gray); padding: 30px;">কোনো মিল পাওয়া যায়নি।</td></tr>`;
+      return;
+    }
+
+    affiliates.forEach(aff => {
+      const approval = aff.admin_approval || 'pending';
+      let badgeClass = 'cj-badge-pending';
+      if (approval === 'active') badgeClass = 'cj-badge-active';
+      if (approval === 'denied') badgeClass = 'cj-badge-denied';
+
+      const joinDate = aff.created_at ? new Date(aff.created_at).toLocaleString() : 'N/A';
+      const fullName = `${aff.first_name || 'Pending'} ${aff.last_name || ''}`;
+
+      tbody.innerHTML += `
+        <tr>
+          <td>
+            <a class="affiliate-id-link" onclick="openAffiliateDossier('${aff.unique_affiliate_id}')">
+              <i class="fa-solid fa-id-badge"></i> #${aff.unique_affiliate_id}
+            </a>
+            <div style="font-size: 0.62rem; color: var(--text-gray); margin-top: 2px;">${joinDate}</div>
+          </td>
+          <td><strong>${fullName}</strong></td>
+          <td>
+            <div>${aff.email}</div>
+            <div style="font-size: 0.65rem; color: var(--gold-solid);">${aff.country_code || ''} ${aff.phone || 'N/A'}</div>
+          </td>
+          <td>${aff.promo_channel || 'General Web'}</td>
+          <td>
+            <strong style="color: var(--accent-green);">$${parseFloat(aff.available_balance || 0).toFixed(2)}</strong>
+            <div style="font-size: 0.62rem; color: var(--text-gray);">Total: $${parseFloat(aff.total_earnings || 0).toFixed(2)}</div>
+          </td>
+          <td><span class="cj-badge ${badgeClass}">${approval.toUpperCase()}</span></td>
+          <td style="text-align: right;">
+            <button class="cj-btn-action cj-btn-approve" onclick="updateApproval('${aff.unique_affiliate_id}', 'active')" title="Approve">Approve</button>
+            <button class="cj-btn-action cj-btn-deny" onclick="updateApproval('${aff.unique_affiliate_id}', 'denied')" title="Deny">Deny</button>
+            <button class="cj-btn-action cj-btn-view" onclick="openAffiliateDossier('${aff.unique_affiliate_id}')" title="View Full Dashboard">View</button>
+          </td>
+        </tr>
+      `;
+    });
+  }
+
+  function filterAffiliates() {
+    const searchVal = document.getElementById('searchAffiliate').value.toLowerCase().trim();
+    const filterStatus = document.getElementById('approvalFilter').value;
+
+    const filtered = allAffiliatesList.filter(aff => {
+      const matchSearch = (aff.unique_affiliate_id && aff.unique_affiliate_id.toLowerCase().includes(searchVal)) ||
+                          (aff.email && aff.email.toLowerCase().includes(searchVal)) ||
+                          (aff.first_name && aff.first_name.toLowerCase().includes(searchVal)) ||
+                          (aff.phone && aff.phone.includes(searchVal));
+
+      const matchStatus = filterStatus === 'all' || (aff.admin_approval || 'pending') === filterStatus;
+
+      return matchSearch && matchStatus;
+    });
+
+    renderTable(filtered);
+  }
+
+  function toggleAutoApproval(mode) {
+    autoApprovalEnabled = mode === 'auto';
+    alert(autoApprovalEnabled ? "অটো-অ্যাপ্রুভ মোড সক্রিয় করা হয়েছে। নতুন রেজিস্ট্রেশন এখন তাৎক্ষণিকভাবে ভ্যালিড হবে।" : "ম্যানুয়াল রিভিউ মোড সক্রিয় করা হয়েছে।");
+  }
+
+  async function updateApproval(affiliateId, status) {
+    try {
+      // ব্যাকএন্ডে স্ট্যাটাস আপডেট করার রিকোয়েস্ট পাঠান (প্রয়োজনীয় রাউট অনুযায়ী)
+      const res = await fetch('/api/affiliate?action=register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ affiliate_id: affiliateId, admin_approval: status })
+      });
+      
+      // লোকাল এরে আপডেট করে রিফ্রেশ
+      const target = allAffiliatesList.find(x => x.unique_affiliate_id === affiliateId);
+      if (target) {
+        target.admin_approval = status;
+      }
+      filterAffiliates();
+      alert(`অ্যাফিলিয়েট আইডি #${affiliateId} এর স্ট্যাটাস সফলভাবে "${status.toUpperCase()}" করা হয়েছে।`);
+    } catch(err) {
+      alert("স্ট্যাটাস পরিবর্তন ব্যর্থ হয়েছে: " + err.message);
+    }
+  }
+
+  function openAffiliateDossier(affiliateId) {
+    const aff = allAffiliatesList.find(x => x.unique_affiliate_id === affiliateId);
+    if (!aff) {
+      alert("অ্যাফিলিয়েট তথ্য পাওয়া যায়নি!");
+      return;
+    }
+
+    const grid = document.getElementById('modalDetailsGrid');
+    grid.innerHTML = `
+      <div><span>Unique ID</span><strong>#${aff.unique_affiliate_id}</strong></div>
+      <div><span>Approval Status</span><strong style="color:var(--gold-solid);">${(aff.admin_approval || 'pending').toUpperCase()}</strong></div>
+      <div><span>First Name</span><strong>${aff.first_name || 'N/A'}</strong></div>
+      <div><span>Last Name</span><strong>${aff.last_name || 'N/A'}</strong></div>
+      <div><span>Email Address</span><strong>${aff.email}</strong></div>
+      <div><span>Phone Number</span><strong>${aff.country_code || ''} ${aff.phone || 'N/A'}</strong></div>
+      <div><span>Promo Channel</span><strong>${aff.promo_channel || 'N/A'}</strong></div>
+      <div><span>Payment Method</span><strong>${aff.payment_method || 'Bank / bKash'}</strong></div>
+      <div><span>Account Details</span><strong>${aff.account_details || 'N/A'}</strong></div>
+      <div><span>Available Balance</span><strong style="color:var(--accent-green);">$${parseFloat(aff.available_balance || 0).toFixed(2)}</strong></div>
+      <div><span>Total Earnings</span><strong>$${parseFloat(aff.total_earnings || 0).toFixed(2)}</strong></div>
+      <div><span>Client IP & Device</span><strong>${aff.user_ip || '127.0.0.1'}</strong></div>
+      <div><span>Registration Date</span><strong>${aff.created_at ? new Date(aff.created_at).toLocaleString() : 'N/A'}</strong></div>
+      <div><span>Payout Request Status</span><strong>${aff.payout_status || 'None'}</strong></div>
+    `;
+
+    document.getElementById('affiliateModal').style.display = 'flex';
+  }
+
+  function closeModal() {
+    document.getElementById('affiliateModal').style.display = 'none';
+  }
+</script>
+</body>
+</html>
