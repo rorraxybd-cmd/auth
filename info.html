@@ -7,6 +7,18 @@
     
     <link rel="icon" type="image/png" href="https://pub-508ef1e45bab487aadde85a1dba202c4.r2.dev/rorraxyfree/mr%20masudar%20logo%20(3).png">
     <script src="/ecosystem-core.js"></script>
+
+    <!-- কঠোর সিকিউরিটি গার্ড: ভেরিফাই এবং মাস্টার পাসওয়ার্ড দেওয়া না থাকলে সরাসরি index.html এ পাঠিয়ে দেবে -->
+    <script>
+        (function() {
+            const v1 = localStorage.getItem('rorraxy_admin_verified');
+            const v2 = localStorage.getItem('rorraxy_admin_authenticated_session');
+            const v3 = localStorage.getItem('rorraxy_master_key_passed');
+            if (v1 !== 'true' || v2 !== 'active' || v3 !== 'true') {
+                window.location.replace('/index.html');
+            }
+        })();
+    </script>
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -52,19 +64,17 @@
 
         .action-btn { background: var(--pink-solid); color: #ffffff; border: none; width: 100%; padding: 14px; border-radius: 12px; font-weight: 800; font-size: 0.82rem; cursor: pointer; text-transform: uppercase; display: flex; align-items: center; justify-content: center; gap: 8px; letter-spacing: 0.8px; box-shadow: 0 0 25px rgba(255,42,133,0.35); transition: all 0.25s ease; margin-top: 10px; }
         .action-btn:hover { filter: brightness(1.12); transform: translateY(-1px); }
+        .action-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+        .back-btn { background: transparent; color: var(--gold-solid); border: 1px solid var(--border-color); width: 100%; padding: 12px; border-radius: 12px; font-weight: 700; font-size: 0.75rem; cursor: pointer; text-transform: uppercase; display: flex; align-items: center; justify-content: center; gap: 6px; text-decoration: none; margin-top: 8px; transition: all 0.25s ease; }
+        .back-btn:hover { background: rgba(212, 175, 55, 0.1); }
         
-        .status-msg { font-size: 0.72rem; text-transform: none; margin-top: 8px; display: none; text-align: center; }
+        .status-msg { font-size: 0.72rem; text-transform: none; margin-top: 8px; display: none; text-align: center; font-weight: 600; }
         .status-msg.error { color: var(--required-red); }
         .status-msg.success { color: var(--accent-green); }
     </style>
 </head>
 <body>
-
-    <script>
-        if (localStorage.getItem('rorraxy_admin_verified') !== 'true') {
-            window.location.replace('/admin/index.html');
-        }
-    </script>
 
     <div class="main-container">
         <header class="dashboard-header">
@@ -84,7 +94,7 @@
                     <div class="form-group"><label>LAST NAME <span class="req-star">*</span></label><input type="text" id="lastName" class="form-control" placeholder="Rahman" required style="text-transform:none;"></div>
                     <div class="form-group"><label>PHONE NUMBER <span class="req-star">*</span></label><input type="tel" id="phone" class="form-control" placeholder="+8801700000000" required style="text-transform:none;"></div>
                     <div class="form-group">
-                        <label>ADMIN PASSWORD (যেমন: মাসুদুর রহমান) <span class="req-star">*</span></label>
+                        <label>ADMIN PASSWORD <span class="req-star">*</span></label>
                         <input type="password" id="adminPassword" class="form-control" placeholder="Enter secure password..." required style="text-transform: none;">
                     </div>
                 </div>
@@ -94,6 +104,10 @@
                 <button type="submit" id="saveInfoBtn" class="action-btn">
                     <i class="fa-solid fa-arrow-right-to-bracket"></i> SAVE & ENTER DASHBOARD
                 </button>
+
+                <a href="/dashboard.html" class="back-btn">
+                    <i class="fa-solid fa-arrow-left"></i> BACK TO DASHBOARD
+                </a>
             </form>
         </div>
     </div>
@@ -131,7 +145,8 @@
             const btn = document.getElementById('saveInfoBtn');
             const formStatus = document.getElementById('formStatus');
             btn.disabled = true;
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> VERIFYING PASSWORD...';
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> SAVING CREDENTIALS...';
+            formStatus.style.display = 'none';
 
             const email = document.getElementById('adminEmail').value.trim().toLowerCase();
             const password = document.getElementById('adminPassword').value.trim();
@@ -145,7 +160,7 @@
             };
 
             try {
-                // ১. ডাটাবেজে ইনফো ও পাসওয়ার্ড সংরক্ষণ
+                // ডাটাবেজে ইনফো ও পাসওয়ার্ড সংরক্ষণ
                 const res = await fetch('/api/admin?action=register', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -154,26 +169,25 @@
                 const result = await res.json();
 
                 if (res.ok && result.success) {
-                    // সফল হলে লোকালস্টোরেজে ফুল অথেন্টিকেশন ফ্ল্যাগ সেট করা
                     localStorage.setItem('rorraxy_admin_verified', 'true');
                     localStorage.setItem('rorraxy_admin_email', email);
                     localStorage.setItem('rorraxy_admin_authenticated_session', 'active');
+                    localStorage.setItem('rorraxy_master_key_passed', 'true');
 
-                    showStatus(formStatus, 'Authentication successful! Entering dashboard...', false);
+                    showStatus(formStatus, 'Saved successfully! Redirecting to dashboard...', false);
                     
                     setTimeout(() => {
-                        window.location.href = '/admin/dashboard.html';
+                        window.location.replace('/dashboard.html');
                     }, 800);
                 } else {
-                    showStatus(formStatus, result.error || 'Authentication failed!', true);
+                    showStatus(formStatus, result.error || 'Failed to save credentials! Try again.', true);
                     btn.disabled = false;
                     btn.innerHTML = '<i class="fa-solid fa-arrow-right-to-bracket"></i> SAVE & ENTER DASHBOARD';
                 }
             } catch (err) {
-                // ফলব্যাক হিসেবে লোকাল সেশন চালু করে ড্যাশবোর্ডে নিয়ে যাওয়া
-                localStorage.setItem('rorraxy_admin_verified', 'true');
-                localStorage.setItem('rorraxy_admin_email', email);
-                window.location.href = '/admin/dashboard.html';
+                showStatus(formStatus, 'Network or server error! Please check connection.', true);
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-solid fa-arrow-right-to-bracket"></i> SAVE & ENTER DASHBOARD';
             }
         }
     </script>
