@@ -26,28 +26,41 @@
     <iframe src="/admin/import.html" class="cj-full-iframe"></iframe>
   </div>
 
-  <!-- 3. BOTTOM 3-ICON NAVIGATION BAR -->
+  <!-- 3. BOTTOM 3-ICON NAVIGATION BAR (Enhanced & Redesigned) -->
   <nav class="cj-bottom-nav">
     <div class="cj-nav-item" onclick="openCjSite()" title="CJ Site">
-      <span class="cj-icon">🛍️</span>
+      <div class="cj-icon-bg">
+        <i class="fa-solid fa-globe"></i>
+      </div>
+      <span class="cj-nav-label">CJ SITE</span>
     </div>
     
     <div class="cj-nav-item active" id="nav-video" onclick="switchTab('video')" title="Links & Video">
-      <span class="cj-icon">🎬</span>
+      <div class="cj-icon-bg">
+        <i class="fa-solid fa-video"></i>
+      </div>
+      <span class="cj-nav-label">MEDIA HUB</span>
     </div>
     
     <div class="cj-nav-item" id="nav-import" onclick="switchTab('import')" title="Import Page">
-      <span class="cj-icon">⚡</span>
+      <div class="cj-icon-bg">
+        <i class="fa-solid fa-cloud-arrow-down"></i>
+      </div>
+      <span class="cj-nav-label">IMPORTER</span>
     </div>
   </nav>
 
 </div>
+
+<!-- FontAwesome CDN for Professional Icons -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
 <style>
   :root {
     --bg-dark: #000000;
     --card-bg: #060609;
     --gold-grad: linear-gradient(135deg, #bf953f 0%, #fcf6ba 50%, #aa771c 100%);
+    --gold-solid: #d4af37;
     --font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   }
 
@@ -67,8 +80,8 @@
   }
 
   .cj-tab-view {
-    position: absolute; top: 0; left: 0; right: 0; bottom: 65px;
-    display: none; width: 100%; height: calc(100% - 65px);
+    position: absolute; top: 0; left: 0; right: 0; bottom: 75px;
+    display: none; width: 100%; height: calc(100% - 75px);
     background: var(--bg-dark); z-index: 10;
   }
   .cj-tab-view.active-tab { display: flex; flex-direction: column; }
@@ -85,7 +98,8 @@
 
   .cj-bottom-input-bar {
     position: absolute; bottom: 0; left: 0; right: 0;
-    background: #000000; border-top: 1px solid #000000;
+    background: rgba(0, 0, 0, 0.95); backdrop-filter: blur(10px);
+    border-top: 1px solid rgba(212, 175, 55, 0.15);
     padding: 12px 16px; z-index: 80;
     display: flex; justify-content: center;
   }
@@ -97,9 +111,10 @@
 
   .cj-input-group input {
     flex: 1; padding: 12px 14px; background: var(--card-bg);
-    border: none; border-radius: 10px;
+    border: 1px solid rgba(212, 175, 55, 0.2); border-radius: 10px;
     color: #ffffff; font-size: 0.85rem; outline: none;
   }
+  .cj-input-group input:focus { border-color: var(--gold-solid); }
 
   .cj-action-btn {
     background: var(--gold-grad); border: none; border-radius: 10px;
@@ -108,7 +123,7 @@
   }
 
   .cj-single-video-card {
-    background: var(--card-bg); border: none;
+    background: var(--card-bg); border: 1px solid rgba(212, 175, 55, 0.15);
     border-radius: 12px; padding: 14px; margin-bottom: 14px;
   }
 
@@ -128,31 +143,51 @@
   }
   .cj-empty-state span { font-size: 2.2rem; display: block; margin-bottom: 8px; }
 
+  /* Redesigned Bottom Navigation Bar */
   .cj-bottom-nav {
-    position: fixed; bottom: 0; left: 0; right: 0; height: 65px;
-    background: #000000; border-top: 1px solid #000000;
+    position: fixed; bottom: 0; left: 0; right: 0; height: 75px;
+    background: rgba(3, 3, 5, 0.98); backdrop-filter: blur(12px);
+    border-top: 1px solid rgba(212, 175, 55, 0.2);
     display: flex; justify-content: space-around; align-items: center;
     z-index: 100; max-width: 650px; margin: 0 auto;
+    padding: 0 10px; box-sizing: border-box;
   }
 
   .cj-nav-item {
-    display: flex; align-items: center; justify-content: center;
-    cursor: pointer; opacity: 0.5; transition: opacity 0.2s, transform 0.1s;
-    flex: 1; height: 100%;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    cursor: pointer; opacity: 0.55; transition: all 0.25s ease;
+    flex: 1; height: 100%; gap: 4px;
   }
   .cj-nav-item:active { transform: scale(0.92); }
 
-  .cj-nav-item .cj-icon {
-    font-size: 1.8rem;
+  .cj-icon-bg {
+    width: 38px; height: 38px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(212, 175, 55, 0.1);
+    transition: all 0.25s ease;
+  }
+
+  .cj-nav-item .cj-icon-bg i {
+    font-size: 1.1rem;
     background: var(--gold-grad); -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
-    filter: drop-shadow(0 0 4px rgba(212, 175, 55, 0.3));
+  }
+
+  .cj-nav-label {
+    font-size: 0.58rem; font-weight: 700; letter-spacing: 0.8px;
+    background: var(--gold-grad); -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent; opacity: 0.7;
+    transition: opacity 0.25s ease;
   }
 
   .cj-nav-item.active { opacity: 1; }
-  .cj-nav-item.active .cj-icon {
-    filter: drop-shadow(0 0 8px rgba(212, 175, 55, 0.6));
+  .cj-nav-item.active .cj-icon-bg {
+    background: rgba(212, 175, 55, 0.12);
+    border-color: rgba(212, 175, 55, 0.4);
+    box-shadow: 0 0 12px rgba(212, 175, 55, 0.25);
   }
+  .cj-nav-item.active .cj-nav-label { opacity: 1; }
 </style>
 
 <script>
