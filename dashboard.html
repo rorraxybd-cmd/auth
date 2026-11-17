@@ -8,6 +8,18 @@
     <link rel="icon" type="image/png" href="https://pub-508ef1e45bab487aadde85a1dba202c4.r2.dev/rorraxyfree/mr%20masudar%20logo%20(3).png">
     <script src="/ecosystem-core.js"></script>
 
+    <!-- কঠোর সিকিউরিটি গার্ড: ভেরিফাই ছাড়া ঢুকলেই index.html এ পাঠিয়ে দেবে -->
+    <script>
+        (function() {
+            const v1 = localStorage.getItem('rorraxy_admin_verified');
+            const v2 = localStorage.getItem('rorraxy_admin_authenticated_session');
+            const v3 = localStorage.getItem('rorraxy_master_key_passed');
+            if (v1 !== 'true' || v2 !== 'active' || v3 !== 'true') {
+                window.location.replace('/index.html');
+            }
+        })();
+    </script>
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -42,7 +54,6 @@
 
         .section-title { font-size: 0.82rem; font-weight: 800; background: var(--gold-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; letter-spacing: 0.5px; }
 
-        /* ৭টি পেজের জন্য চমৎকার গোল্ডেন গ্রিড কার্ড লেআউট */
         .pages-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; width: 100%; }
         .page-card { background: var(--card-retail); border: 1px solid var(--border-color); border-radius: 18px; padding: 22px; display: flex; align-items: center; justify-content: space-between; text-decoration: none; color: var(--text-white); transition: all 0.25s ease; box-shadow: 0 8px 25px rgba(0,0,0,0.7); }
         .page-card:hover { border-color: var(--gold-solid); transform: translateY(-3px); box-shadow: 0 12px 35px rgba(212,175,55,0.15); }
@@ -53,7 +64,6 @@
         .page-info div p { font-size: 0.62rem; color: var(--text-gray); text-transform: none; }
         .page-card .fa-chevron-right { color: var(--gold-solid); font-size: 0.85rem; }
 
-        /* বটম নেভিগেশন (৫টি নির্দিষ্ট অপশন) */
         .admin-bottom-nav { position: fixed !important; bottom: 0 !important; left: 0 !important; width: 100% !important; background: rgba(3, 3, 5, 0.98) !important; border-top: 1px solid var(--border-color) !important; display: flex !important; justify-content: space-around !important; align-items: center !important; padding: 10px 4px !important; z-index: 1000 !important; }
         .nav-item { display: flex !important; flex-direction: column !important; align-items: center !important; text-decoration: none !important; flex: 1 !important; background: none !important; border: none !important; cursor: pointer !important; }
         .nav-item.active i, .nav-item.active span { background: var(--gold-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
@@ -65,13 +75,6 @@
 </head>
 <body>
 
-    <!-- সিকিউরিটি গার্ড চেক -->
-    <script>
-        if (localStorage.getItem('rorraxy_admin_verified') !== 'true' || localStorage.getItem('rorraxy_admin_authenticated_session') !== 'active') {
-            window.location.replace('/admin/index.html');
-        }
-    </script>
-
     <div class="main-container">
         <header class="dashboard-header">
             <div class="brand-box">
@@ -79,7 +82,7 @@
                 <h1>ADMIN MASTER DASHBOARD</h1>
             </div>
             <div class="header-actions">
-                <a href="/admin/info.html" class="settings-btn">
+                <a href="/info.html" class="settings-btn">
                     <i class="fa-solid fa-user-gear"></i> SETTINGS & INFO
                 </a>
             </div>
@@ -91,7 +94,7 @@
             </div>
             
             <div class="pages-grid">
-                <a href="/admin/seller.html" class="page-card">
+                <a href="/seller.html" class="page-card">
                     <div class="page-info">
                         <i class="fa-solid fa-store"></i>
                         <div>
@@ -102,7 +105,7 @@
                     <i class="fa-solid fa-chevron-right"></i>
                 </a>
 
-                <a href="/admin/affiliate.html" class="page-card">
+                <a href="/affiliate.html" class="page-card">
                     <div class="page-info">
                         <i class="fa-solid fa-handshake-angle"></i>
                         <div>
@@ -113,7 +116,7 @@
                     <i class="fa-solid fa-chevron-right"></i>
                 </a>
 
-                <a href="/admin/business.html" class="page-card">
+                <a href="/business.html" class="page-card">
                     <div class="page-info">
                         <i class="fa-solid fa-briefcase"></i>
                         <div>
@@ -124,7 +127,7 @@
                     <i class="fa-solid fa-chevron-right"></i>
                 </a>
 
-                <a href="/admin/products.html" class="page-card">
+                <a href="/products.html" class="page-card">
                     <div class="page-info">
                         <i class="fa-solid fa-boxes-stacked"></i>
                         <div>
@@ -135,7 +138,7 @@
                     <i class="fa-solid fa-chevron-right"></i>
                 </a>
 
-                <a href="/admin/import.html" class="page-card">
+                <a href="/import.html" class="page-card">
                     <div class="page-info">
                         <i class="fa-solid fa-file-arrow-down"></i>
                         <div>
@@ -146,7 +149,7 @@
                     <i class="fa-solid fa-chevron-right"></i>
                 </a>
 
-                <a href="/admin/info.html" class="page-card">
+                <a href="/info.html" class="page-card">
                     <div class="page-info">
                         <i class="fa-solid fa-id-card-clip"></i>
                         <div>
@@ -157,11 +160,11 @@
                     <i class="fa-solid fa-chevron-right"></i>
                 </a>
 
-                <a href="/admin/index.html" class="page-card" onclick="localStorage.removeItem('rorraxy_admin_verified');">
+                <a href="javascript:void(0)" class="page-card" onclick="strictAdminLogout()">
                     <div class="page-info" style="color: #ff4d4d;">
                         <i class="fa-solid fa-right-from-bracket" style="background: none; -webkit-text-fill-color: #ff4d4d;"></i>
                         <div>
-                            <h3 style="color: #ff4d4d;">LOGOUT / VERIFY</h3>
+                            <h3 style="color: #ff4d4d;">LOGOUT / LOCK</h3>
                             <p>Secure session exit</p>
                         </div>
                     </div>
@@ -171,28 +174,37 @@
         </section>
     </div>
 
-    <!-- বটম নেভিগেশন (আপনার নির্দেশিত ৫টি প্রধান অপশন) -->
     <nav class="admin-bottom-nav">
-        <a href="/admin/seller.html" class="nav-item">
+        <a href="/seller.html" class="nav-item">
             <i class="fa-solid fa-store"></i>
             <span>SELLER</span>
         </a>
-        <a href="/admin/affiliate.html" class="nav-item">
+        <a href="/affiliate.html" class="nav-item">
             <i class="fa-solid fa-handshake-angle"></i>
             <span>AFFILIATE</span>
         </a>
-        <a href="/admin/business.html" class="nav-item">
+        <a href="/business.html" class="nav-item">
             <i class="fa-solid fa-briefcase"></i>
             <span>BUSINESS</span>
         </a>
-        <a href="/admin/import.html" class="nav-item">
+        <a href="/import.html" class="nav-item">
             <i class="fa-solid fa-file-arrow-down"></i>
             <span>IMPORT</span>
         </a>
-        <a href="/admin/products.html" class="nav-item">
+        <a href="/products.html" class="nav-item">
             <i class="fa-solid fa-boxes-stacked"></i>
             <span>PRODUCTS</span>
         </a>
     </nav>
+
+    <script>
+        function strictAdminLogout() {
+            localStorage.removeItem('rorraxy_admin_verified');
+            localStorage.removeItem('rorraxy_admin_authenticated_session');
+            localStorage.removeItem('rorraxy_master_key_passed');
+            localStorage.removeItem('rorraxy_admin_email');
+            window.location.replace('/index.html');
+        }
+    </script>
 </body>
 </html>
