@@ -4,6 +4,21 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
 <title>Upload Shorts & Videos - rorraxy Ecosystem</title>
+<link rel="icon" type="image/png" href="https://pub-508ef1e45bab487aadde85a1dba202c4.r2.dev/rorraxyfree/mr%20masudar%20logo%20(3).png">
+<script src="/ecosystem-core.js"></script>
+
+<!-- কঠোর সিকিউরিটি গার্ড: ভেরিফাই এবং মাস্টার পাসওয়ার্ড দেওয়া না থাকলে সরাসরি index.html এ পাঠিয়ে দেবে -->
+<script>
+    (function() {
+        const v1 = localStorage.getItem('rorraxy_admin_verified');
+        const v2 = localStorage.getItem('rorraxy_admin_authenticated_session');
+        const v3 = localStorage.getItem('rorraxy_master_key_passed');
+        if (v1 !== 'true' || v2 !== 'active' || v3 !== 'true') {
+            window.location.replace('/index.html');
+        }
+    })();
+</script>
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -97,7 +112,6 @@ transition: border-color 0.2s ease;
 border-color: var(--gold-solid);
 }
 
-/* Custom Drop File Area */
 .file-drop-area {
 position: relative;
 display: flex;
@@ -190,7 +204,6 @@ cursor: not-allowed;
 transform: none;
 }
 
-/* Status & Progress */
 .progress-container {
 width: 100%;
 background: rgba(255,255,255,0.05);
@@ -281,7 +294,7 @@ text-decoration: underline;
 </button>
 </form>
 
-<a href="/index.html" class="back-link"><i class="fa-solid fa-arrow-left"></i> Back to Ecosystem Feed</a>
+<a href="/dashboard.html" class="back-link"><i class="fa-solid fa-arrow-left"></i> Back to Master Dashboard</a>
 </div>
 
 <script>
@@ -379,7 +392,7 @@ uploadForm.addEventListener('submit', async function(e) {
     showStatus('Video uploaded & connected to ecosystem successfully!', 'success');
     
     setTimeout(() => {
-      window.location.href = '/index.html#shorts';
+      window.location.replace('/dashboard.html');
     }, 1500);
 
   } catch (err) {
