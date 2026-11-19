@@ -3,7 +3,6 @@ export async function onRequest(context) {
     const { request, env } = context;
     const url = new URL(request.url);
     const action = url.searchParams.get('action');
-
     const corsHeaders = {
         'Access-Control-Allow-Origin': '*',
         'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
@@ -11,13 +10,10 @@ export async function onRequest(context) {
         'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
         'Content-Type': 'application/json'
     };
-
     if (request.method === 'OPTIONS') {
         return new Response(null, { headers: corsHeaders });
     }
-
     const cleanPhone = (p) => String(p || '').replace(/[\s\-\(\)\+]/g, '');
-
     try {
         switch (action) {
             case 'get_global_users': {
@@ -40,15 +36,12 @@ export async function onRequest(context) {
                         });
                     }
                 });
-
                 return jsonResponse({ success: true, users: Array.from(uniqueMap.values()) }, corsHeaders);
             }
-
             case 'get_user_profile': {
                 if (request.method !== 'GET') break;
                 const phone = cleanPhone(url.searchParams.get('phone'));
                 if (!phone) return jsonResponse({ success: false, user: null }, corsHeaders);
-
                 const user = await env.chat.prepare(
                     "SELECT phone_number, display_name, username, avatar_url, is_live, is_verified FROM chat_master_system WHERE record_type = 'user' AND (phone_number = ? OR phone_number = ? OR phone_number = ?) LIMIT 1"
                 ).bind(phone, '+' + phone, '880' + phone.replace(/^880/, '')).first();
