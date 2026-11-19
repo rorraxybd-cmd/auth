@@ -8,9 +8,6 @@
     <!-- Favicon Logo -->
     <link rel="icon" type="image/png" href="https://pub-508ef1e45bab487aadde85a1dba202c4.r2.dev/rorraxyfree/mr%20masudar%20logo%20(3).png">
 
-    <!-- Ecosystem Core Script -->
-    <script src="/ecosystem-core.js"></script>
-
     <!-- Google Fonts & FontAwesome -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -53,7 +50,6 @@
             gap: 20px;
             text-align: center;
             backdrop-filter: blur(10px);
-            box-shadow: 0 15px 40px rgba(0,0,0,0.9);
         }
 
         .auth-logo {
@@ -62,7 +58,6 @@
             max-height: 120px;
             object-fit: contain;
             margin: 0 auto;
-            filter: drop-shadow(0 6px 20px rgba(255, 42, 133, 0.25)) !important;
         }
 
         .auth-title {
@@ -108,7 +103,6 @@
             font-family: var(--font-main);
             text-transform: none;
             transition: all 0.25s ease;
-            box-shadow: inset 0 2px 4px rgba(0,0,0,0.8);
         }
 
         .form-control:focus {
@@ -169,14 +163,12 @@
             align-items: center;
             justify-content: center;
             gap: 8px;
-            box-shadow: 0 0 25px rgba(255, 42, 133, 0.4);
             transition: all 0.25s ease;
         }
 
         .verify-action-btn:hover {
             filter: brightness(1.12);
             transform: translateY(-2px);
-            box-shadow: 0 0 35px rgba(255, 42, 133, 0.6);
         }
 
         .status-msg {
@@ -256,8 +248,8 @@
     </div>
 
     <script>
-        // আপনার admin.js যে পাথ বা Worker-এ ডিপ্লয় করা আছে, প্রয়োজনে সেটি দিন (যেমন '/admin' বা '/api/admin')
-        const ADMIN_API_BASE = "/admin";
+        // admin.js ফাইলটি অবশ্যই প্রজেক্টের functions/api/admin.js পাথে রাখবেন
+        const ADMIN_API_BASE = "/api/admin";
         const STRICT_MASTER_PASS = "rorraxy2026";
 
         const magicLinkForm = document.getElementById('magicLinkForm');
@@ -291,7 +283,7 @@
             element.style.display = 'block';
         }
 
-        // ধাপ ১ সাবমিট: admin.js (?action=verify)-এ ইমেইল ভেরিফাই ও D1 আপডেট
+        // ধাপ ১ সাবমিট: /api/admin?action=verify কল করে Cloudflare D1-এ তথ্য সেভ
         magicLinkForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             const email = adminEmailInput.value.trim().toLowerCase();
@@ -314,7 +306,13 @@
                     body: JSON.stringify({ email: email })
                 });
 
-                const data = await response.json();
+                const text = await response.text();
+                let data = {};
+                try {
+                    data = JSON.parse(text);
+                } catch (_) {
+                    throw new Error(`Server returned HTTP ${response.status} (Check functions/api/admin.js path)`);
+                }
 
                 if (response.ok && data.success) {
                     isStep1Passed = true;
@@ -327,18 +325,18 @@
                     step2PasswordForm.style.display = 'flex';
                     masterPasswordInput.focus();
                 } else {
-                    showStatus(formStatus, data.error || 'Email verification failed. Access denied.', true);
+                    showStatus(formStatus, data.error || `Verification failed (HTTP ${response.status}).`, true);
                     sendLinkBtn.disabled = false;
                     sendLinkBtn.innerText = "VERIFY EMAIL & PROCEED";
                 }
             } catch (err) {
-                showStatus(formStatus, 'Network error! Could not verify server.', true);
+                showStatus(formStatus, err.message || 'Network error! Could not verify server.', true);
                 sendLinkBtn.disabled = false;
                 sendLinkBtn.innerText = "VERIFY EMAIL & PROCEED";
             }
         });
 
-        // ধাপ ২ সাবমিট: পাসওয়ার্ড যাচাই এবং admin.js (?action=register)-এ রেকর্ড সিঙ্ক
+        // ধাপ ২ সাবমিট: পাসওয়ার্ড যাচাই এবং /api/admin?action=register-এ রেকর্ড সিঙ্ক
         step2PasswordForm.addEventListener('submit', async (e) => {
             e.preventDefault();
 
