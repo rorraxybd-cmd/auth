@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
     <title>Admin Portal - rorraxy</title>
-   
+
     <!-- Favicon Logo -->
     <link rel="icon" type="image/png" href="https://pub-508ef1e45bab487aadde85a1dba202c4.r2.dev/rorraxyfree/mr%20masudar%20logo%20(3).png">
 
@@ -41,7 +41,7 @@
             justify-content: center;
             align-items: center;
         }
-        
+
         .auth-card {
             background: var(--card-retail);
             border: 1px solid rgba(255, 42, 133, 0.15);
@@ -210,7 +210,6 @@
 <body>
 
     <script>
-        // যদি আগে থেকেই দুটি ধাপই কঠোরভাবে ভেরিফাই করা থাকে, তবে সরাসরি ড্যাশবোর্ডে যাবে
         if (
             localStorage.getItem('rorraxy_admin_verified') === 'true' &&
             localStorage.getItem('rorraxy_admin_authenticated_session') === 'active' &&
@@ -223,7 +222,7 @@
     <div class="auth-wrapper">
         <div class="auth-card">
             <img src="https://pub-508ef1e45bab487aadde85a1dba202c4.r2.dev/rorraxyfree/mr%20masudar%20logo%20(3).png" alt="rorraxy logo" class="auth-logo">
-            
+
             <h2 class="auth-title" id="portalHeading">STEP 1: ADMIN VERIFICATION</h2>
 
             <!-- ধাপ ১: ইমেইল ভেরিফিকেশন ফর্ম -->
@@ -233,13 +232,13 @@
                     <input type="email" class="form-control" id="adminEmail" placeholder="Enter authorized email..." required autocomplete="email">
                     <span class="email-hint"><i class="fa-solid fa-shield-halved" style="color: #ff2a85;"></i> Step 1 of 2: Email Identity Check</span>
                 </div>
-                
+
                 <div id="formStatus" class="status-msg"></div>
 
                 <button type="submit" class="auth-btn" id="sendLinkBtn">VERIFY EMAIL & PROCEED</button>
             </form>
 
-            <!-- ধাপ ২: অটোমেটিক মাস্টার পাসওয়ার্ড ফর্ম -->
+            <!-- ধাপ ২: মাস্টার পাসওয়ার্ড ফর্ম -->
             <form id="step2PasswordForm" class="auth-form">
                 <div class="form-group">
                     <label>SECURITY MASTER PASSWORD <span style="color:var(--required-red)">*</span></label>
@@ -257,13 +256,14 @@
     </div>
 
     <script>
-        const WORKER_URL = "https://email.rorraxybd.workers.dev";
-        const STRICT_MASTER_PASS = "rorraxy2026"; // আপনার নির্ধারিত পাসওয়ার্ড
+        // আপনার admin.js যে পাথ বা Worker-এ ডিপ্লয় করা আছে, প্রয়োজনে সেটি দিন (যেমন '/admin' বা '/api/admin')
+        const ADMIN_API_BASE = "/admin";
+        const STRICT_MASTER_PASS = "rorraxy2026";
 
         const magicLinkForm = document.getElementById('magicLinkForm');
         const step2PasswordForm = document.getElementById('step2PasswordForm');
         const portalHeading = document.getElementById('portalHeading');
-        
+
         const adminEmailInput = document.getElementById('adminEmail');
         const sendLinkBtn = document.getElementById('sendLinkBtn');
         const formStatus = document.getElementById('formStatus');
@@ -273,6 +273,7 @@
         const unlockDashboardBtn = document.getElementById('unlockDashboardBtn');
 
         let isStep1Passed = false;
+        let verifiedEmail = "";
 
         function isAuthenticEmail(email) {
             const blockedDomains = ['tempmail', '10minutemail', 'throwaway', 'mailinator', 'yopmail', 'disposable', 'trashmail'];
@@ -290,7 +291,7 @@
             element.style.display = 'block';
         }
 
-        // ধাপ ১ সাবমিট: ইমেইল ভেরিফাই
+        // ধাপ ১ সাবমিট: admin.js (?action=verify)-এ ইমেইল ভেরিফাই ও D1 আপডেট
         magicLinkForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             const email = adminEmailInput.value.trim().toLowerCase();
@@ -307,7 +308,7 @@
             formStatus.style.display = 'none';
 
             try {
-                const response = await fetch(`${WORKER_URL}/api/send-magic-link`, {
+                const response = await fetch(`${ADMIN_API_BASE}?action=verify`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ email: email })
@@ -317,10 +318,10 @@
 
                 if (response.ok && data.success) {
                     isStep1Passed = true;
+                    verifiedEmail = email;
                     localStorage.setItem('rorraxy_admin_verified', 'true');
                     localStorage.setItem('rorraxy_admin_email', email);
 
-                    // ধাপ ১ লুকিয়ে অটোমেটিক ধাপ ২ (পাসওয়ার্ড) চালু করা
                     magicLinkForm.style.display = 'none';
                     portalHeading.innerText = "STEP 2: SECURITY LOCK";
                     step2PasswordForm.style.display = 'flex';
@@ -337,10 +338,11 @@
             }
         });
 
-        // ধাপ ২ সাবমিট: মাস্টার পাসওয়ার্ড চেক
-        step2PasswordForm.addEventListener('submit', (e) => {
+        // ধাপ ২ সাবমিট: পাসওয়ার্ড যাচাই এবং admin.js (?action=register)-এ রেকর্ড সিঙ্ক
+        step2PasswordForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            
+
+            const savedEmail = verifiedEmail || localStorage.getItem('rorraxy_admin_email') || "";
             if (!isStep1Passed && localStorage.getItem('rorraxy_admin_verified') !== 'true') {
                 window.location.reload();
                 return;
@@ -348,11 +350,36 @@
 
             const enteredPass = masterPasswordInput.value.trim();
 
-            if (enteredPass === STRICT_MASTER_PASS) {
-                unlockDashboardBtn.disabled = true;
-                unlockDashboardBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> UNLOCKING...';
-                
-                // কঠোর সেশন টোকেন সেট করা
+            if (enteredPass !== STRICT_MASTER_PASS) {
+                showStatus(passStatus, 'Incorrect Master Password! Access Denied.', true);
+                masterPasswordInput.value = '';
+                masterPasswordInput.focus();
+                return;
+            }
+
+            unlockDashboardBtn.disabled = true;
+            unlockDashboardBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> UNLOCKING...';
+            passStatus.style.display = 'none';
+
+            try {
+                const response = await fetch(`${ADMIN_API_BASE}?action=register`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        email: savedEmail,
+                        password: enteredPass
+                    })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok || !data.success) {
+                    showStatus(passStatus, data.error || 'Could not sync verification with server.', true);
+                    unlockDashboardBtn.disabled = false;
+                    unlockDashboardBtn.innerHTML = '<i class="fa-solid fa-lock-open"></i> UNLOCK & ENTER DASHBOARD';
+                    return;
+                }
+
                 localStorage.setItem('rorraxy_admin_verified', 'true');
                 localStorage.setItem('rorraxy_admin_authenticated_session', 'active');
                 localStorage.setItem('rorraxy_master_key_passed', 'true');
@@ -363,10 +390,10 @@
                 setTimeout(() => {
                     window.location.replace('/dashboard.html');
                 }, 700);
-            } else {
-                showStatus(passStatus, 'Incorrect Master Password! Access Denied.', true);
-                masterPasswordInput.value = '';
-                masterPasswordInput.focus();
+            } catch (err) {
+                showStatus(passStatus, 'Network error while saving admin session.', true);
+                unlockDashboardBtn.disabled = false;
+                unlockDashboardBtn.innerHTML = '<i class="fa-solid fa-lock-open"></i> UNLOCK & ENTER DASHBOARD';
             }
         });
     </script>
