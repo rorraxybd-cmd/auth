@@ -164,6 +164,66 @@
         border-radius: 10px; display: none; padding: 12px;
         text-transform: none !important; background: #040406;
       }
+
+      /* 9:16 Luxury Animated Reels Preview Card */
+      .reels-preview-strip {
+        display: flex;
+        gap: 10px;
+        overflow-x: auto;
+        padding: 6px 2px 10px 2px;
+      }
+
+      .lux-reel-thumb {
+        position: relative;
+        flex: 0 0 74px;
+        aspect-ratio: 9 / 16;
+        background: #000000;
+        border-radius: 10px;
+        overflow: hidden;
+        opacity: 0;
+        transform: scale(0.9) translateY(10px);
+        animation: luxReelReveal 0.65s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+      }
+
+      .lux-reel-thumb img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        background: #000000;
+        transition: transform 0.5s ease;
+      }
+
+      .lux-reel-thumb:hover img {
+        transform: scale(1.07);
+      }
+
+      .lux-reel-thumb::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(
+          115deg,
+          transparent 30%,
+          rgba(255, 255, 255, 0.14) 50%,
+          transparent 70%
+        );
+        transform: translateX(-130%);
+        animation: luxReelShine 1.3s ease 0.25s forwards;
+        pointer-events: none;
+      }
+
+      @keyframes luxReelReveal {
+        to {
+          opacity: 1;
+          transform: scale(1) translateY(0);
+        }
+      }
+
+      @keyframes luxReelShine {
+        to {
+          transform: translateX(130%);
+        }
+      }
     </style>
 </head>
 <body>
@@ -249,17 +309,17 @@
       </div>
 
       <!-- লাইভ থাম্বনেইল প্রিভিউ বক্স -->
-      <div id="productPreviewBox" style="display: none; background: #040406; border: 1px solid rgba(212, 175, 55, 0.3); border-radius: 12px; padding: 12px; margin-bottom: 14px;">
-        <div style="font-size: 0.68rem; font-weight: 700; color: var(--gold-solid); margin-bottom: 6px; text-transform: uppercase;">Product Preview</div>
+      <div id="productPreviewBox" style="display: none; background: #000000; border-radius: 12px; padding: 12px; margin-bottom: 14px;">
+        <div style="font-size: 0.68rem; font-weight: 700; color: var(--gold-solid); margin-bottom: 6px; text-transform: uppercase;">Product Preview (9:16 Reels Frame)</div>
         <div id="previewTitle" style="font-size: 0.72rem; color: var(--text-white); font-weight: 600; margin-bottom: 8px; line-height: 1.3;"></div>
         <div id="previewPrice" style="font-size: 0.65rem; color: var(--text-gray); margin-bottom: 8px;"></div>
         
         <!-- সাইজ ও ভ্যারিয়েন্ট ইনফো -->
         <div id="previewSizes" style="font-size: 0.62rem; color: #00ff80; margin-bottom: 8px; font-weight: 600;"></div>
 
-        <!-- ছোট ছোট থাম্বনেইল গ্যালারি -->
+        <!-- অ্যানিমেটেড 9:16 থাম্বনেইল গ্যালারি -->
         <div style="font-size: 0.62rem; font-weight: 700; color: var(--text-gray); margin-bottom: 4px;">GALLERY IMAGES:</div>
-        <div id="previewImagesGrid" style="display: flex; gap: 6px; overflow-x: auto; padding-bottom: 6px; max-height: 75px;"></div>
+        <div id="previewImagesGrid" class="reels-preview-strip"></div>
         
         <!-- ভিডিও প্রিভিউ সেকশন -->
         <div id="previewVideoContainer" style="margin-top: 8px;"></div>
@@ -602,7 +662,8 @@
 
       if (result.success) {
         previewTitle.innerHTML = result.data.title;
-        let imgCount = result.imagesArray ? result.imagesArray.length : (result.data.imagesCount || 0);
+        const galleryList = result.data?.imagesArray || result.imagesArray || [];
+        const imgCount = galleryList.length || (result.data.imagesCount || 0);
         previewPrice.innerHTML = `Retail Price: <strong>$${result.data.retailPrice}</strong> | Sample Price: <strong>$${result.data.priceSample}</strong> | Total Images: <strong>${imgCount}</strong>`;
         
         if (result.data.sizes && result.data.sizes.length > 0) {
@@ -611,16 +672,19 @@
           previewSizes.innerHTML = `Available Sizes: Standard / Free Size`;
         }
 
-        if (result.imagesArray && Array.isArray(result.imagesArray)) {
-          result.imagesArray.forEach(imgUrl => {
-            let img = document.createElement('img');
+        if (Array.isArray(galleryList)) {
+          galleryList.forEach((imgUrl, idx) => {
+            const card = document.createElement('div');
+            card.className = 'lux-reel-thumb';
+            card.style.animationDelay = `${idx * 0.08}s`;
+
+            const img = document.createElement('img');
             img.src = imgUrl;
-            img.style.width = '55px';
-            img.style.height = '55px';
-            img.style.objectFit = 'cover';
-            img.style.borderRadius = '6px';
-            img.style.border = '1px solid rgba(212, 175, 55, 0.3)';
-            previewImagesGrid.appendChild(img);
+            img.alt = 'Preview Image';
+            img.loading = 'lazy';
+
+            card.appendChild(img);
+            previewImagesGrid.appendChild(card);
           });
         }
 
@@ -710,10 +774,8 @@
         document.getElementById('retailMargin').value = "100";
         document.getElementById('shippingCushion').value = "15";
         document.getElementById('wholesaleMargin').value = "30";
-        
-        if(category) {
-            document.getElementById('selectedCategoryValue').value = category;
-        }
+        document.getElementById('selectedCategoryValue').value = "";
+        document.getElementById('selectedCategoryLabel').innerText = "SELECT CATEGORY...";
         document.getElementById('productPreviewBox').style.display = 'none';
       } else {
         statusDiv.style.background = 'rgba(255, 42, 133, 0.08)';
