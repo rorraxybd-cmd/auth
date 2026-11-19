@@ -11,7 +11,6 @@ export async function onRequestPost(context) {
       targetCountry,
       discountOffer,
       category,
-      processedImages,
       previewOnly
     } = await request.json();
 
@@ -65,7 +64,7 @@ export async function onRequestPost(context) {
     const priceMinWhole = (baseCost * (1 + (wMargin * 0.75))).toFixed(2);
     const priceBulk = (baseCost * (1 + (wMargin * 0.5))).toFixed(2);
 
-    // ৪. মাল্টিপল ইমেজ ও গ্যালারি এক্সট্রাকশন লজিক
+    // ৪. মাল্টিপল ইমেজ ও গ্যালারি এক্সট্রাকশন লজিক (সরাসরি CJ ইমেজ)
     let rawImages = [];
 
     const extract = (source) => {
@@ -119,6 +118,9 @@ export async function onRequestPost(context) {
       imagesArray = [p.productImage];
     }
 
+    const mainImage = imagesArray.length > 0 ? imagesArray[0] : 'https://images.unsplash.com/photo-1523275335684-37898b6baf30';
+    const imagesListJson = JSON.stringify(imagesArray);
+
     let sizesList = [];
     if (p.variants && Array.isArray(p.variants)) {
       p.variants.forEach(v => {
@@ -168,57 +170,7 @@ export async function onRequestPost(context) {
       }), { headers: { "Content-Type": "application/json" } });
     }
 
-    // ৬. সার্ভার থেকে সর্বোচ্চ ১০টি ছবি নিয়ে R2-তে আপলোড (অথবা ক্লায়েন্ট থেকে আসা প্রসেসড R2 লিংক ব্যবহার)
-    const r2Bucket = env.image || env.R2_BUCKET || env.BUCKET;
-    const publicBase = (env.R2_PUBLIC_URL || "https://img.rorraxy.com").replace(/\/+$/, "");
-    let finalImages = [];
-    let r2UploadedCount = 0;
-
-    if (Array.isArray(processedImages) && processedImages.length > 0) {
-      finalImages = processedImages.filter(u => typeof u === 'string' && u.startsWith('http')).slice(0, 10);
-      r2UploadedCount = finalImages.length;
-    } else if (r2Bucket && imagesArray.length > 0) {
-      const batch = imagesArray.slice(0, 10);
-      for (let i = 0; i < batch.length; i++) {
-        const srcUrl = batch[i];
-        try {
-          const imgResp = await fetch(srcUrl, {
-            headers: { "User-Agent": "Mozilla/5.0" }
-          });
-          if (!imgResp.ok) {
-            finalImages.push(srcUrl);
-            continue;
-          }
-          const arrayBuf = await imgResp.arrayBuffer();
-          const contentType = imgResp.headers.get("content-type") || "image/jpeg";
-          const ext = contentType.includes("webp") ? "webp" : contentType.includes("png") ? "png" : "jpg";
-          const key = `reels/${cjProductId}/${Date.now()}_${i + 1}.${ext}`;
-
-          await r2Bucket.put(key, arrayBuf, {
-            httpMetadata: {
-              contentType: contentType.startsWith("image/") ? contentType : "image/webp",
-              cacheControl: "public, max-age=31536000, immutable"
-            }
-          });
-
-          finalImages.push(`${publicBase}/${key}`);
-          r2UploadedCount++;
-        } catch (imgErr) {
-          finalImages.push(srcUrl);
-        }
-      }
-    } else {
-      finalImages = imagesArray.slice(0, 10);
-    }
-
-    if (finalImages.length === 0) {
-      finalImages = ['https://images.unsplash.com/photo-1523275335684-37898b6baf30'];
-    }
-
-    const mainImage = finalImages[0];
-    const imagesListJson = JSON.stringify(finalImages);
-
-    // ৭. Database Save (Category, Target Country এবং Discount Rate সহ)
+    // ৬. Database Save (সরাসরি CJ ইমেজ লিংকসহ)
     await env.retail.prepare(`
       INSERT INTO products (
         cj_product_id,
@@ -265,9 +217,8 @@ export async function onRequestPost(context) {
         title: p.productNameEn,
         retailPrice,
         priceSample,
-        imagesCount: finalImages.length,
-        imagesArray: finalImages,
-        r2UploadedCount,
+        imagesCount: imagesArray.length,
+        imagesArray: imagesArray,
         videoUrl: finalVideoUrl,
         hasVideo: !!finalVideoUrl
       }
