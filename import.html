@@ -337,9 +337,12 @@
 
       <!-- লাইভ থাম্বনেইল প্রিভিউ ও AI প্রসেসিং বক্স -->
       <div id="productPreviewBox" style="display: none; background: #000000; border-radius: 12px; padding: 12px; margin-bottom: 14px;">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:6px; flex-wrap:wrap; margin-bottom:6px;">
           <div style="font-size: 0.68rem; font-weight: 700; color: var(--gold-solid); text-transform: uppercase;">Product Preview (9:16 Reels Frame)</div>
-          <button type="button" id="runAiPipelineBtn" onclick="runClientImagePipeline()" class="cj-btn-secondary" style="padding: 5px 10px; font-size: 0.62rem;">✨ AUTO CLEAN & 9:16</button>
+          <div style="display:flex; gap:6px;">
+            <button type="button" id="runAiPipelineBtn" onclick="runClientImagePipeline()" class="cj-btn-secondary" style="padding: 5px 10px; font-size: 0.62rem;">✨ AUTO CLEAN & 9:16</button>
+            <button type="button" id="revertOriginalBtn" onclick="revertToOriginalImages()" class="cj-btn-secondary" style="padding: 5px 10px; font-size: 0.62rem; display: none;">↩ ORIGINAL</button>
+          </div>
         </div>
         <div id="previewTitle" style="font-size: 0.72rem; color: var(--text-white); font-weight: 600; margin-bottom: 8px; line-height: 1.3;"></div>
         <div id="previewPrice" style="font-size: 0.65rem; color: var(--text-gray); margin-bottom: 8px;"></div>
@@ -668,6 +671,18 @@
     });
   }
 
+  function revertToOriginalImages() {
+    if (!rawFetchedImages || rawFetchedImages.length === 0) return;
+    processedR2Images = [];
+    renderPreviewGallery(rawFetchedImages);
+    document.getElementById('revertOriginalBtn').style.display = 'none';
+    const text = document.getElementById('pipelineProgressText');
+    if (text) {
+      document.getElementById('pipelineProgressWrap').style.display = 'block';
+      text.textContent = '↩ Reverted to original high-quality CJ images.';
+    }
+  }
+
   async function fetchProductPreview() {
     let cjProductId = document.getElementById('cjProductId').value.trim();
     if (!cjProductId) {
@@ -685,6 +700,7 @@
 
     rawFetchedImages = [];
     processedR2Images = [];
+    document.getElementById('revertOriginalBtn').style.display = 'none';
 
     previewBox.style.display = 'block';
     previewTitle.innerHTML = 'Loading product details from CJ...';
@@ -757,7 +773,6 @@
   async function compose9x16BlackWebP(cutoutBlob) {
     const imgBitmap = await createImageBitmap(cutoutBlob);
 
-    // প্রোডাক্টের গড় উজ্জ্বলতা পরীক্ষা (কালো প্রোডাক্ট হলে হালকা বুস্ট/গ্লো)
     const testCanvas = document.createElement('canvas');
     testCanvas.width = 64;
     testCanvas.height = 64;
@@ -779,11 +794,9 @@
     canvas.height = H;
     const ctx = canvas.getContext('2d');
 
-    // পিওর ব্ল্যাক (#000000) ব্যাকগ্রাউন্ড
     ctx.fillStyle = '#000000';
     ctx.fillRect(0, 0, W, H);
 
-    // প্রোডাক্ট স্কেলিং (9:16 ফ্রেমের মাঝখানে)
     const maxW = W * 0.84;
     const maxH = H * 0.68;
     const scale = Math.min(maxW / imgBitmap.width, maxH / imgBitmap.height);
@@ -794,12 +807,11 @@
 
     ctx.save();
     if (avgBrightness < 68) {
-      // কালো বা ডার্ক প্রোডাক্টের চারপাশে হালকা সিলভার-গোল্ড রিম গ্লো ও ডিটেইল বুস্ট
       ctx.shadowColor = 'rgba(235, 225, 200, 0.35)';
       ctx.shadowBlur = 18;
-      ctx.filter = 'brightness(1.16) contrast(1.18)';
+      ctx.filter = 'brightness(1.12) contrast(1.12)';
     } else {
-      ctx.filter = 'brightness(1.06) contrast(1.12)';
+      ctx.filter = 'brightness(1.04) contrast(1.06)';
     }
     ctx.drawImage(imgBitmap, drawX, drawY, drawW, drawH);
     ctx.restore();
@@ -876,6 +888,7 @@
         processedR2Images = uploadedUrls;
         text.textContent = `✓ ${uploadedUrls.length} Images Cleaned, 9:16 Black WebP & Uploaded to R2!`;
         renderPreviewGallery(uploadedUrls);
+        document.getElementById('revertOriginalBtn').style.display = 'inline-block';
       } else {
         text.textContent = '⚠ Browser CORS blocked direct CJ image fetch; original links will be used.';
       }
@@ -914,7 +927,6 @@
     btn.disabled = true;
 
     try {
-      // প্রিভিউ আগে না চালানো থাকলে অটোমেটিক আগে প্রোডাক্টের ছবি এনে প্রসেস করবে
       if (rawFetchedImages.length === 0) {
         await fetchProductPreview();
       }
@@ -965,6 +977,7 @@
         document.getElementById('selectedCategoryValue').value = "";
         document.getElementById('selectedCategoryLabel').innerText = "SELECT CATEGORY...";
         document.getElementById('productPreviewBox').style.display = 'none';
+        document.getElementById('revertOriginalBtn').style.display = 'none';
         rawFetchedImages = [];
         processedR2Images = [];
       } else {
