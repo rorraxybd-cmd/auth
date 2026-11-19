@@ -158,6 +158,10 @@
         text-transform: uppercase; letter-spacing: 0.8px;
         box-shadow: 0 4px 15px rgba(212, 175, 55, 0.25);
       }
+      .cj-btn-gold:disabled {
+        opacity: 0.55;
+        cursor: not-allowed;
+      }
 
       .cj-status-box {
         margin-top: 16px; font-size: 0.72rem; line-height: 1.5;
@@ -175,7 +179,7 @@
 
       .lux-reel-thumb {
         position: relative;
-        flex: 0 0 74px;
+        flex: 0 0 78px;
         aspect-ratio: 9 / 16;
         background: #000000;
         border-radius: 10px;
@@ -224,11 +228,34 @@
           transform: translateX(130%);
         }
       }
+
+      .pipeline-progress-wrap {
+        margin-top: 8px;
+        background: #040406;
+        border-radius: 8px;
+        padding: 8px 10px;
+        font-size: 0.65rem;
+        color: var(--gold-solid);
+        display: none;
+      }
+      .pipeline-bar-bg {
+        width: 100%;
+        height: 5px;
+        background: #14141d;
+        border-radius: 4px;
+        margin-top: 6px;
+        overflow: hidden;
+      }
+      .pipeline-bar-fill {
+        width: 0%;
+        height: 100%;
+        background: var(--gold-gradient);
+        transition: width 0.3s ease;
+      }
     </style>
 </head>
 <body>
 
-<!-- Global Product Importer - Full Screen Soft Dark Design -->
 <div class="cj-fullscreen-wrapper">
   <div class="cj-content-container">
     <div class="cj-import-header">
@@ -308,20 +335,25 @@
         <input type="hidden" id="selectedCategoryValue" required>
       </div>
 
-      <!-- লাইভ থাম্বনেইল প্রিভিউ বক্স -->
+      <!-- লাইভ থাম্বনেইল প্রিভিউ ও AI প্রসেসিং বক্স -->
       <div id="productPreviewBox" style="display: none; background: #000000; border-radius: 12px; padding: 12px; margin-bottom: 14px;">
-        <div style="font-size: 0.68rem; font-weight: 700; color: var(--gold-solid); margin-bottom: 6px; text-transform: uppercase;">Product Preview (9:16 Reels Frame)</div>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+          <div style="font-size: 0.68rem; font-weight: 700; color: var(--gold-solid); text-transform: uppercase;">Product Preview (9:16 Reels Frame)</div>
+          <button type="button" id="runAiPipelineBtn" onclick="runClientImagePipeline()" class="cj-btn-secondary" style="padding: 5px 10px; font-size: 0.62rem;">✨ AUTO CLEAN & 9:16</button>
+        </div>
         <div id="previewTitle" style="font-size: 0.72rem; color: var(--text-white); font-weight: 600; margin-bottom: 8px; line-height: 1.3;"></div>
         <div id="previewPrice" style="font-size: 0.65rem; color: var(--text-gray); margin-bottom: 8px;"></div>
         
-        <!-- সাইজ ও ভ্যারিয়েন্ট ইনফো -->
         <div id="previewSizes" style="font-size: 0.62rem; color: #00ff80; margin-bottom: 8px; font-weight: 600;"></div>
 
-        <!-- অ্যানিমেটেড 9:16 থাম্বনেইল গ্যালারি -->
-        <div style="font-size: 0.62rem; font-weight: 700; color: var(--text-gray); margin-bottom: 4px;">GALLERY IMAGES:</div>
+        <div id="pipelineProgressWrap" class="pipeline-progress-wrap">
+          <div id="pipelineProgressText">Preparing AI Background Removal...</div>
+          <div class="pipeline-bar-bg"><div id="pipelineBarFill" class="pipeline-bar-fill"></div></div>
+        </div>
+
+        <div style="font-size: 0.62rem; font-weight: 700; color: var(--text-gray); margin: 8px 0 4px 0;">GALLERY IMAGES:</div>
         <div id="previewImagesGrid" class="reels-preview-strip"></div>
         
-        <!-- ভিডিও প্রিভিউ সেকশন -->
         <div id="previewVideoContainer" style="margin-top: 8px;"></div>
       </div>
 
@@ -520,6 +552,10 @@
 </div>
 
 <script>
+  let rawFetchedImages = [];
+  let processedR2Images = [];
+  let bgRemovalModule = null;
+
   window.addEventListener('DOMContentLoaded', () => {
       const categoryPickerTrigger = document.getElementById('categoryPickerTrigger');
       const categoryTransparentOverlay = document.getElementById('categoryTransparentOverlay');
@@ -564,12 +600,8 @@
       document.getElementById('categoryTransparentOverlay').style.display = 'none';
       const labelElem = document.getElementById('selectedCategoryLabel');
       const hiddenInput = document.getElementById('selectedCategoryValue');
-      if(labelElem) {
-          labelElem.innerText = categoryName;
-      }
-      if(hiddenInput) {
-          hiddenInput.value = categoryKey;
-      }
+      if(labelElem) labelElem.innerText = categoryName;
+      if(hiddenInput) hiddenInput.value = categoryKey;
   }
 
   function extractPidFromUrl() {
@@ -618,6 +650,24 @@
     }, 1000);
   }
 
+  function renderPreviewGallery(list) {
+    const grid = document.getElementById('previewImagesGrid');
+    grid.innerHTML = '';
+    list.forEach((imgUrl, idx) => {
+      const card = document.createElement('div');
+      card.className = 'lux-reel-thumb';
+      card.style.animationDelay = `${idx * 0.08}s`;
+
+      const img = document.createElement('img');
+      img.src = imgUrl;
+      img.alt = 'Preview Image';
+      img.loading = 'lazy';
+
+      card.appendChild(img);
+      grid.appendChild(card);
+    });
+  }
+
   async function fetchProductPreview() {
     let cjProductId = document.getElementById('cjProductId').value.trim();
     if (!cjProductId) {
@@ -632,6 +682,9 @@
     const previewImagesGrid = document.getElementById('previewImagesGrid');
     const previewVideoContainer = document.getElementById('previewVideoContainer');
     const previewBtn = document.getElementById('previewBtn');
+
+    rawFetchedImages = [];
+    processedR2Images = [];
 
     previewBox.style.display = 'block';
     previewTitle.innerHTML = 'Loading product details from CJ...';
@@ -662,8 +715,8 @@
 
       if (result.success) {
         previewTitle.innerHTML = result.data.title;
-        const galleryList = result.data?.imagesArray || result.imagesArray || [];
-        const imgCount = galleryList.length || (result.data.imagesCount || 0);
+        rawFetchedImages = result.data?.imagesArray || result.imagesArray || [];
+        const imgCount = rawFetchedImages.length || (result.data.imagesCount || 0);
         previewPrice.innerHTML = `Retail Price: <strong>$${result.data.retailPrice}</strong> | Sample Price: <strong>$${result.data.priceSample}</strong> | Total Images: <strong>${imgCount}</strong>`;
         
         if (result.data.sizes && result.data.sizes.length > 0) {
@@ -672,21 +725,7 @@
           previewSizes.innerHTML = `Available Sizes: Standard / Free Size`;
         }
 
-        if (Array.isArray(galleryList)) {
-          galleryList.forEach((imgUrl, idx) => {
-            const card = document.createElement('div');
-            card.className = 'lux-reel-thumb';
-            card.style.animationDelay = `${idx * 0.08}s`;
-
-            const img = document.createElement('img');
-            img.src = imgUrl;
-            img.alt = 'Preview Image';
-            img.loading = 'lazy';
-
-            card.appendChild(img);
-            previewImagesGrid.appendChild(card);
-          });
-        }
+        renderPreviewGallery(rawFetchedImages);
 
         let activeVideo = result.data.videoUrl || document.getElementById('manualVideoUrl').value.trim();
         if (activeVideo) {
@@ -714,6 +753,141 @@
     }
   }
 
+  // ব্রাউজার-ভিত্তিক AI Background Removal + 9:16 Pure Black (#000000) Canvas + WebP + R2 Upload
+  async function compose9x16BlackWebP(cutoutBlob) {
+    const imgBitmap = await createImageBitmap(cutoutBlob);
+
+    // প্রোডাক্টের গড় উজ্জ্বলতা পরীক্ষা (কালো প্রোডাক্ট হলে হালকা বুস্ট/গ্লো)
+    const testCanvas = document.createElement('canvas');
+    testCanvas.width = 64;
+    testCanvas.height = 64;
+    const tCtx = testCanvas.getContext('2d');
+    tCtx.drawImage(imgBitmap, 0, 0, 64, 64);
+    const data = tCtx.getImageData(0, 0, 64, 64).data;
+    let sum = 0, count = 0;
+    for (let i = 0; i < data.length; i += 4) {
+      if (data[i + 3] > 30) {
+        sum += (data[i] + data[i + 1] + data[i + 2]) / 3;
+        count++;
+      }
+    }
+    const avgBrightness = count > 0 ? sum / count : 128;
+
+    const W = 1080, H = 1920;
+    const canvas = document.createElement('canvas');
+    canvas.width = W;
+    canvas.height = H;
+    const ctx = canvas.getContext('2d');
+
+    // পিওর ব্ল্যাক (#000000) ব্যাকগ্রাউন্ড
+    ctx.fillStyle = '#000000';
+    ctx.fillRect(0, 0, W, H);
+
+    // প্রোডাক্ট স্কেলিং (9:16 ফ্রেমের মাঝখানে)
+    const maxW = W * 0.84;
+    const maxH = H * 0.68;
+    const scale = Math.min(maxW / imgBitmap.width, maxH / imgBitmap.height);
+    const drawW = Math.round(imgBitmap.width * scale);
+    const drawH = Math.round(imgBitmap.height * scale);
+    const drawX = Math.round((W - drawW) / 2);
+    const drawY = Math.round((H - drawH) / 2);
+
+    ctx.save();
+    if (avgBrightness < 68) {
+      // কালো বা ডার্ক প্রোডাক্টের চারপাশে হালকা সিলভার-গোল্ড রিম গ্লো ও ডিটেইল বুস্ট
+      ctx.shadowColor = 'rgba(235, 225, 200, 0.35)';
+      ctx.shadowBlur = 18;
+      ctx.filter = 'brightness(1.16) contrast(1.18)';
+    } else {
+      ctx.filter = 'brightness(1.06) contrast(1.12)';
+    }
+    ctx.drawImage(imgBitmap, drawX, drawY, drawW, drawH);
+    ctx.restore();
+
+    return new Promise((resolve) => {
+      canvas.toBlob((blob) => resolve(blob), 'image/webp', 0.82);
+    });
+  }
+
+  async function runClientImagePipeline() {
+    if (!rawFetchedImages || rawFetchedImages.length === 0) {
+      alert("আগে PREVIEW বাটনে ক্লিক করে ছবি লোড করুন।");
+      return [];
+    }
+
+    if (processedR2Images.length > 0) {
+      return processedR2Images;
+    }
+
+    const wrap = document.getElementById('pipelineProgressWrap');
+    const text = document.getElementById('pipelineProgressText');
+    const bar = document.getElementById('pipelineBarFill');
+    const aiBtn = document.getElementById('runAiPipelineBtn');
+
+    wrap.style.display = 'block';
+    aiBtn.disabled = true;
+    text.textContent = 'Loading AI Background Removal Engine...';
+    bar.style.width = '10%';
+
+    try {
+      if (!bgRemovalModule) {
+        bgRemovalModule = await import('https://esm.sh/@imgly/background-removal@1.4.5');
+      }
+      const removeBackground = bgRemovalModule.removeBackground || bgRemovalModule.default;
+
+      const pid = document.getElementById('cjProductId').value.trim() || 'prod';
+      const maxImages = rawFetchedImages.slice(0, 8);
+      const uploadedUrls = [];
+
+      for (let i = 0; i < maxImages.length; i++) {
+        const pct = Math.round(((i + 0.3) / maxImages.length) * 100);
+        bar.style.width = `${pct}%`;
+        text.textContent = `Processing Image ${i + 1} of ${maxImages.length}: Removing BG & 9:16 WebP...`;
+
+        try {
+          const imgRes = await fetch(maxImages[i]);
+          const srcBlob = await imgRes.blob();
+
+          const cutoutBlob = await removeBackground(srcBlob);
+          const webpBlob = await compose9x16BlackWebP(cutoutBlob);
+
+          text.textContent = `Uploading Image ${i + 1} of ${maxImages.length} to R2 (img.rorraxy.com)...`;
+
+          const upRes = await fetch('/api/upload?type=image', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'image/webp',
+              'X-File-Name': `${pid}_reel_${i + 1}.webp`
+            },
+            body: webpBlob
+          });
+
+          const upData = await upRes.json();
+          if (upData.success && upData.url) {
+            uploadedUrls.push(upData.url);
+          }
+        } catch (imgErr) {
+          console.warn('Skipped image due to CORS/processing:', maxImages[i], imgErr);
+        }
+      }
+
+      bar.style.width = '100%';
+      if (uploadedUrls.length > 0) {
+        processedR2Images = uploadedUrls;
+        text.textContent = `✓ ${uploadedUrls.length} Images Cleaned, 9:16 Black WebP & Uploaded to R2!`;
+        renderPreviewGallery(uploadedUrls);
+      } else {
+        text.textContent = '⚠ Browser CORS blocked direct CJ image fetch; original links will be used.';
+      }
+      return uploadedUrls;
+    } catch (err) {
+      text.textContent = `Pipeline notice: ${err.message}`;
+      return [];
+    } finally {
+      aiBtn.disabled = false;
+    }
+  }
+
   document.getElementById('cjImportForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     const statusDiv = document.getElementById('importStatus');
@@ -736,10 +910,18 @@
     statusDiv.style.display = 'block';
     statusDiv.style.background = 'rgba(212, 175, 55, 0.08)';
     statusDiv.style.color = 'var(--gold-solid)';
-    statusDiv.innerHTML = 'SYNCING PRODUCT DATA...';
+    statusDiv.innerHTML = 'STEP 1/2: PROCESSING AI BACKGROUND REMOVAL & 9:16 WEBP...';
     btn.disabled = true;
 
     try {
+      // প্রিভিউ আগে না চালানো থাকলে অটোমেটিক আগে প্রোডাক্টের ছবি এনে প্রসেস করবে
+      if (rawFetchedImages.length === 0) {
+        await fetchProductPreview();
+      }
+      const cleanR2List = await runClientImagePipeline();
+
+      statusDiv.innerHTML = 'STEP 2/2: SYNCING PRODUCT TO DATABASE...';
+
       const res = await fetch('/api/import-cj', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -752,6 +934,7 @@
           targetCountry,
           discountOffer,
           category,
+          processedImages: cleanR2List,
           fetchAllImages: true
         })
       });
@@ -759,14 +942,19 @@
       const result = await res.json();
 
       if (result.success) {
+        const finalCount = cleanR2List.length > 0 ? cleanR2List.length : (result.data.imagesCount || 0);
+        const r2Badge = cleanR2List.length > 0
+          ? `<br><span style="color: var(--gold-solid);">✨ ${cleanR2List.length} Cleaned 9:16 Black WebP Images Uploaded to R2</span>`
+          : "";
+
         statusDiv.style.background = 'rgba(0, 255, 128, 0.08)';
         statusDiv.style.color = '#00ff80';
-        statusDiv.innerHTML = `✓ ${result.message}<br><br>
+        statusDiv.innerHTML = `✓ ${result.message}${r2Badge}<br><br>
           <strong>Product:</strong> ${result.data.title}<br>
           <strong>Category:</strong> ${category.toUpperCase()}<br>
           <strong>Target Country:</strong> ${targetCountry.toUpperCase()}<br>
           <strong>Discount:</strong> ${discountOffer ? discountOffer + '% OFF' : 'NO DISCOUNT'}<br>
-          <strong>Images Count:</strong> ${result.data.imagesCount || 0} Images Synced<br>
+          <strong>Images Count:</strong> ${finalCount} Images Synced<br>
           <strong>Retail Price:</strong> $${result.data.retailPrice}<br>
           <strong>Sample Price:</strong> $${result.data.priceSample}`;
           
@@ -777,6 +965,8 @@
         document.getElementById('selectedCategoryValue').value = "";
         document.getElementById('selectedCategoryLabel').innerText = "SELECT CATEGORY...";
         document.getElementById('productPreviewBox').style.display = 'none';
+        rawFetchedImages = [];
+        processedR2Images = [];
       } else {
         statusDiv.style.background = 'rgba(255, 42, 133, 0.08)';
         statusDiv.style.color = 'var(--pink-love)';
