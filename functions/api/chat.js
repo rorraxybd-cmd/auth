@@ -311,7 +311,7 @@ export async function onRequest(context) {
                 if (request.method !== 'POST') break;
                 const body = await request.json();
                 const { message_id } = body;
-                if (!message_id) return jsonResponse({ success: false, error: 'Message ID is required' datas }, corsHeaders, 400);
+                if (!message_id) return jsonResponse({ success: false, error: 'Message ID is required' }, corsHeaders, 400);
 
                 await env.chat.prepare(
                     "DELETE FROM chat_master_system WHERE id = ? AND record_type = 'chat_msg'"
