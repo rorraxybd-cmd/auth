@@ -1,0 +1,43 @@
+name: Process Reels Images
+
+on:
+  workflow_dispatch:
+    inputs:
+      image_urls:
+        description: "Comma separated image URLs"
+        required: true
+        type: string
+      product_id:
+        description: "Product ID"
+        required: false
+        type: string
+        default: "prod"
+
+jobs:
+  process:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install rembg pillow numpy requests
+
+      - name: Run image processor
+        env:
+          IMAGE_URLS: ${{ inputs.image_urls }}
+          PRODUCT_ID: ${{ inputs.product_id }}
+        run: python scripts/process_images.py
+
+      - name: Upload processed images as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: processed-reels-images-${{ inputs.product_id }}
+          path: output/*.webp
