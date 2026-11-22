@@ -9,7 +9,7 @@ export async function onRequest(context) {
   };
 
   if (request.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { status: 204, headers: corsHeaders });
   }
 
   const db = env.retail || env.DB;
@@ -24,13 +24,13 @@ export async function onRequest(context) {
   }
 
   try {
-    const pathname = url.pathname;
+    const pathname = url.pathname.replace(/\/+$/, "");
 
     // 1. Send Magic Link & Check Existing Profile Status
-    if (pathname.includes("/send-magic-link")) {
+    if (pathname.endsWith("/send-magic-link")) {
       if (request.method !== "POST") {
         return new Response(
-          JSON.stringify({ error: "Method not allowed" }),
+          JSON.stringify({ success: false, error: "Method not allowed" }),
           {
             status: 405,
             headers: { ...corsHeaders, "Content-Type": "application/json", "Cache-Control": "no-store" },
@@ -44,7 +44,7 @@ export async function onRequest(context) {
 
       if (!email) {
         return new Response(
-          JSON.stringify({ error: "Email required" }),
+          JSON.stringify({ success: false, error: "Email required" }),
           {
             status: 400,
             headers: { ...corsHeaders, "Content-Type": "application/json", "Cache-Control": "no-store" },
@@ -52,7 +52,10 @@ export async function onRequest(context) {
         );
       }
 
-      const existingSeller = await db.prepare("SELECT * FROM sellers WHERE LOWER(TRIM(email)) = ?").bind(email).first();
+      const existingSeller = await db
+        .prepare("SELECT * FROM sellers WHERE LOWER(TRIM(email)) = ?")
+        .bind(email)
+        .first();
 
       const emailPrefix = email.split("@")[0].replace(/[^a-z0-9]/g, "").substring(0, 6);
       const randomSuffix = Math.random().toString(36).substring(2, 8);
@@ -66,7 +69,8 @@ export async function onRequest(context) {
 
       const sqlMagic = `
         INSERT INTO sellers (
-          seller_id, email, mobile_number, verification_token, token_expires_at, last_ip, ip_country, user_agent, is_verified, admin_approval_status
+          seller_id, email, mobile_number, verification_token, token_expires_at,
+          last_ip, ip_country, user_agent, is_verified, admin_approval_status
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, COALESCE((SELECT admin_approval_status FROM sellers WHERE LOWER(TRIM(email)) = ?), 'pending'))
         ON CONFLICT(email) DO UPDATE SET
           verification_token = excluded.verification_token,
@@ -77,10 +81,13 @@ export async function onRequest(context) {
           user_agent = excluded.user_agent
       `;
 
-      await db.prepare(sqlMagic).bind(uniqueSellerId, email, mobile_number, token, expiresAt, clientIp, ipCountry, userAgent, email).run();
+      await db
+        .prepare(sqlMagic)
+        .bind(uniqueSellerId, email, mobile_number, token, expiresAt, clientIp, ipCountry, userAgent, email)
+        .run();
 
       const magicLink = `https://${url.hostname}/api/seller/verify-magic?token=${token}`;
-      const isProfileComplete = existingSeller && existingSeller.brand_name && existingSeller.full_name ? true : false;
+      const isProfileComplete = Boolean(existingSeller && existingSeller.brand_name && existingSeller.full_name);
 
       return new Response(
         JSON.stringify({
@@ -98,7 +105,7 @@ export async function onRequest(context) {
     }
 
     // 2. Verify Magic Link Token Endpoint & Smart Redirect
-    if (pathname.includes("/verify-magic")) {
+    if (pathname.endsWith("/verify-magic")) {
       const token = url.searchParams.get("token");
       if (!token) {
         return new Response("Invalid Verification Token", { status: 400 });
@@ -112,8 +119,8 @@ export async function onRequest(context) {
       }
 
       const now = new Date().toISOString();
-      const sqlVerify = "UPDATE sellers SET is_verified = 1, verified_at = ?, verification_token = NULL, token_expires_at = NULL WHERE verification_token = ?";
-
+      const sqlVerify =
+        "UPDATE sellers SET is_verified = 1, verified_at = ?, verification_token = NULL, token_expires_at = NULL WHERE verification_token = ?";
       await db.prepare(sqlVerify).bind(now, token).run();
 
       const isComplete = record.brand_name && record.full_name ? "true" : "false";
@@ -122,48 +129,88 @@ export async function onRequest(context) {
       return Response.redirect(redirectUrl, 302);
     }
 
-    // 2.5. Admin Update Status Endpoint (/update-status) -> Approve / Reject / Pending
-    if (pathname.includes("/update-status")) {
+    // 2.5. Admin Update Status Endpoint (/update-status) -> Permanent DB Update
+    if (pathname.endsWith("/update-status")) {
       if (request.method !== "POST") {
-        return new Response(JSON.stringify({ success: false, error: "Method not allowed" }), {
-          status: 405,
-          headers: { ...corsHeaders, "Content-Type": "application/json", "Cache-Control": "no-store" },
-        });
+        return new Response(
+          JSON.stringify({ success: false, error: "Method not allowed" }),
+          {
+            status: 405,
+            headers: { ...corsHeaders, "Content-Type": "application/json", "Cache-Control": "no-store" },
+          }
+        );
       }
 
       const bodyData = await request.json().catch(() => ({}));
       const email = (bodyData.email || "").toLowerCase().trim();
-      const newStatus = (bodyData.status || "pending").toLowerCase().trim();
-
-      if (!email) {
-        return new Response(
-          JSON.stringify({ success: false, error: "Email required" }),
-          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json", "Cache-Control": "no-store" } }
-        );
-      }
+      const sellerId = (bodyData.seller_id || "").trim();
+      const newStatus = (bodyData.status || bodyData.admin_approval_status || "").toLowerCase().trim();
 
       if (!["pending", "approved", "rejected"].includes(newStatus)) {
         return new Response(
-          JSON.stringify({ success: false, error: "Invalid status" }),
-          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json", "Cache-Control": "no-store" } }
+          JSON.stringify({ success: false, error: "Invalid status value" }),
+          {
+            status: 400,
+            headers: { ...corsHeaders, "Content-Type": "application/json", "Cache-Control": "no-store" },
+          }
         );
       }
 
-      await db.prepare("UPDATE sellers SET admin_approval_status = ? WHERE LOWER(TRIM(email)) = ?")
-        .bind(newStatus, email)
-        .run();
+      if (!email && !sellerId) {
+        return new Response(
+          JSON.stringify({ success: false, error: "Email or seller_id required" }),
+          {
+            status: 400,
+            headers: { ...corsHeaders, "Content-Type": "application/json", "Cache-Control": "no-store" },
+          }
+        );
+      }
+
+      if (email) {
+        await db
+          .prepare("UPDATE sellers SET admin_approval_status = ? WHERE LOWER(TRIM(email)) = ?")
+          .bind(newStatus, email)
+          .run();
+      } else {
+        await db
+          .prepare("UPDATE sellers SET admin_approval_status = ? WHERE TRIM(seller_id) = ?")
+          .bind(newStatus, sellerId)
+          .run();
+      }
+
+      const updatedRow = email
+        ? await db.prepare("SELECT email, seller_id, admin_approval_status FROM sellers WHERE LOWER(TRIM(email)) = ?").bind(email).first()
+        : await db.prepare("SELECT email, seller_id, admin_approval_status FROM sellers WHERE TRIM(seller_id) = ?").bind(sellerId).first();
+
+      if (!updatedRow) {
+        return new Response(
+          JSON.stringify({ success: false, error: "Seller not found in database" }),
+          {
+            status: 404,
+            headers: { ...corsHeaders, "Content-Type": "application/json", "Cache-Control": "no-store" },
+          }
+        );
+      }
 
       return new Response(
-        JSON.stringify({ success: true, message: `Seller status updated to ${newStatus}`, admin_approval_status: newStatus }),
-        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json", "Cache-Control": "no-store" } }
+        JSON.stringify({
+          success: true,
+          message: `Seller status updated to ${updatedRow.admin_approval_status}`,
+          admin_approval_status: updatedRow.admin_approval_status,
+          data: updatedRow,
+        }),
+        {
+          status: 200,
+          headers: { ...corsHeaders, "Content-Type": "application/json", "Cache-Control": "no-store" },
+        }
       );
     }
 
     // 3. POST Upsert / Save Seller Profile Information
     if (request.method === "POST") {
       const data = await request.json().catch(() => ({}));
-      const email = (data.email || data.seller_id || "").toLowerCase().trim();
-      const mobileNumber = data.mobile_number || data.phone || "";
+      const email = (data.email || "").toLowerCase().trim();
+      const mobileNumber = (data.mobile_number || data.phone || "").trim();
       const clientIp = request.headers.get("cf-connecting-ip") || "Unknown";
       const country = request.headers.get("cf-ipcountry") || data.country || "Bangladesh";
       const userAgent = request.headers.get("user-agent") || "Unknown";
@@ -181,7 +228,9 @@ export async function onRequest(context) {
 
       const emailPrefix = email.split("@")[0].replace(/[^a-z0-9]/g, "").substring(0, 6);
       const fallbackSellerId = `rorraxy-${emailPrefix}-${Math.random().toString(36).substring(2, 8)}`;
-      const finalSellerId = data.seller_id && data.seller_id.startsWith("rorraxy-") ? data.seller_id : fallbackSellerId;
+      const finalSellerId = data.seller_id && String(data.seller_id).startsWith("rorraxy-")
+        ? String(data.seller_id)
+        : fallbackSellerId;
 
       const sqlUpsert = `
         INSERT INTO sellers (
@@ -208,30 +257,36 @@ export async function onRequest(context) {
           user_agent = excluded.user_agent
       `;
 
-      await db.prepare(sqlUpsert).bind(
-        finalSellerId,
-        email,
-        mobileNumber,
-        data.brand_name || "",
-        data.full_name || "",
-        data.business_desc || "",
-        data.whatsapp || "",
-        data.emergency_phone || "",
-        country,
-        data.full_address || "",
-        data.doc_type || "NID",
-        data.doc_number || "",
-        data.trade_license || "N/A",
-        data.logo_url || "",
-        email,
-        clientIp,
-        country,
-        userAgent,
-        email,
-        now
-      ).run();
+      await db
+        .prepare(sqlUpsert)
+        .bind(
+          finalSellerId,
+          email,
+          mobileNumber,
+          data.brand_name || "",
+          data.full_name || "",
+          data.business_desc || "",
+          data.whatsapp || "",
+          data.emergency_phone || "",
+          country,
+          data.full_address || "",
+          data.doc_type || "NID",
+          data.doc_number || "",
+          data.trade_license || "N/A",
+          data.logo_url || "",
+          email,
+          clientIp,
+          country,
+          userAgent,
+          email,
+          now
+        )
+        .run();
 
-      const sellerRecord = await db.prepare("SELECT id, seller_id, email, admin_approval_status FROM sellers WHERE LOWER(TRIM(email)) = ?").bind(email).first();
+      const sellerRecord = await db
+        .prepare("SELECT id, seller_id, email, admin_approval_status FROM sellers WHERE LOWER(TRIM(email)) = ?")
+        .bind(email)
+        .first();
 
       return new Response(
         JSON.stringify({
@@ -275,8 +330,11 @@ export async function onRequest(context) {
     }
 
     return new Response(
-      JSON.stringify({ message: "Seller API Active" }),
-      { status: 200, headers: { ...corsHeaders, "Cache-Control": "no-store" } }
+      JSON.stringify({ success: true, message: "Seller API Active" }),
+      {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json", "Cache-Control": "no-store" },
+      }
     );
   } catch (err) {
     return new Response(
