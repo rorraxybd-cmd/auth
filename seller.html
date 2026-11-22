@@ -753,9 +753,16 @@
                     })
                 });
 
-                const result = await response.json().catch(() => ({}));
+                const rawText = await response.text();
+                let result = {};
+                try {
+                    result = JSON.parse(rawText);
+                } catch (_) {
+                    throw new Error(`HTTP ${response.status}: ${rawText.slice(0, 120) || 'Invalid server response'}`);
+                }
+
                 if (!response.ok || !result.success) {
-                    throw new Error(result.error || 'Failed to update status on server');
+                    throw new Error(result.error || result.message || `HTTP ${response.status} error`);
                 }
 
                 await fetchSellers();
