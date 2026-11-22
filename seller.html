@@ -477,7 +477,7 @@
             </div>
             <div class="stat-card">
                 <h3>Total Escrow Balance</h3>
-                <div class="value" id="stat-escrow" style="color: var(--accent-blue);">৳48,250</div>
+                <div class="value" id="stat-escrow" style="color: var(--accent-blue);">৳0</div>
             </div>
         </div>
 
@@ -553,7 +553,7 @@
                     <h3 style="font-size: 16px; color: var(--gold-solid);">Financial Ledger & Settlement</h3>
                     <div>
                         <span style="font-size: 13px; color: var(--text-gray);">Pending Balance: </span>
-                        <strong id="modalPendingBalance" style="color: var(--accent-blue);">৳12,500</strong>
+                        <strong id="modalPendingBalance" style="color: var(--accent-blue);">৳0</strong>
                     </div>
                 </div>
                 <table class="sub-table">
@@ -567,8 +567,9 @@
                         </tr>
                     </thead>
                     <tbody id="financeLedgerBody">
-                        <tr><td>TXN-98421</td><td>ORD-5541</td><td>৳5,400</td><td>৳540 (10%)</td><td><span class="badge paid">Settled</span></td></tr>
-                        <tr><td>TXN-99120</td><td>ORD-5892</td><td>৳7,100</td><td>৳710 (10%)</td><td><span class="badge pending">In Escrow</span></td></tr>
+                        <tr>
+                            <td colspan="5" style="text-align: center; color: var(--text-gray); padding: 20px;">No financial transactions recorded yet.</td>
+                        </tr>
                     </tbody>
                 </table>
             </div>
@@ -586,8 +587,9 @@
                         </tr>
                     </thead>
                     <tbody id="shipmentTrackingBody">
-                        <tr><td>TRK-BD-8841</td><td>Rahim Ahmed</td><td>RedX / Steadfast</td><td><span class="badge approved">In Transit</span></td></tr>
-                        <tr><td>TRK-BD-9923</td><td>Karim Uddin</td><td>Pathao Courier</td><td><span class="badge paid">Delivered</span></td></tr>
+                        <tr>
+                            <td colspan="4" style="text-align: center; color: var(--text-gray); padding: 20px;">No active shipments found.</td>
+                        </tr>
                     </tbody>
                 </table>
             </div>
@@ -631,7 +633,7 @@
             document.getElementById('stat-total').innerText = allSellersData.length;
             document.getElementById('stat-pending').innerText = allSellersData.filter(s => (s.admin_approval_status || 'pending') === 'pending').length;
             document.getElementById('stat-approved').innerText = allSellersData.filter(s => s.admin_approval_status === 'approved').length;
-            document.getElementById('stat-escrow').innerText = '৳48,250';
+            document.getElementById('stat-escrow').innerText = '৳0';
         }
 
         function filterSellers(keepPage = 1) {
