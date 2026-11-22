@@ -25,6 +25,7 @@
             --card-border: #1a1a24;
             --gold-gradient: linear-gradient(135deg, #bf953f 0%, #fcf6ba 25%, #b38728 50%, #fbf5b7 75%, #aa771c 100%);
             --gold-solid: #d4af37;
+            --pink-love: #ff2a85;
             --accent-green: #00ff80;
             --accent-red: #ff4d4d;
             --accent-blue: #00e5ff;
@@ -261,7 +262,7 @@
 
         .btn-approve { background: var(--accent-green); color: #000; }
         .btn-deny { background: var(--accent-red); color: #fff; }
-        .btn-action:hover:not(:disabled) { opacity: 0.85; }
+        .btn-action:hover { opacity: 0.85; }
         .btn-action:disabled { opacity: 0.5; cursor: not-allowed; }
 
         .modal-overlay {
@@ -587,9 +588,7 @@
 
         async function fetchSellers() {
             try {
-                const response = await fetch(`/api/seller?_t=${Date.now()}`, {
-                    cache: 'no-store'
-                });
+                const response = await fetch(`/api/seller?_t=${Date.now()}`, { cache: 'no-store' });
                 const result = await response.json();
                 if (result.success && Array.isArray(result.data)) {
                     allSellersData = result.data;
@@ -616,8 +615,7 @@
             const statusVal = document.getElementById('statusFilter').value;
 
             filteredData = allSellersData.filter(seller => {
-                const currentStatus = (seller.admin_approval_status || 'pending').toLowerCase();
-                const matchStatus = (statusVal === 'all') || (currentStatus === statusVal);
+                const matchStatus = (statusVal === 'all') || ((seller.admin_approval_status || 'pending') === statusVal);
                 const matchSearch =
                     (seller.brand_name || '').toLowerCase().includes(searchQuery) ||
                     (seller.full_name || '').toLowerCase().includes(searchQuery) ||
@@ -627,13 +625,7 @@
                 return matchStatus && matchSearch;
             });
 
-            if (resetPage) {
-                currentPage = 1;
-            } else {
-                const maxPage = Math.max(1, Math.ceil(filteredData.length / pageSize));
-                if (currentPage > maxPage) currentPage = maxPage;
-            }
-
+            if (resetPage) currentPage = 1;
             renderTable();
         }
 
@@ -653,7 +645,7 @@
 
             let html = '';
             paginatedItems.forEach(s => {
-                const status = (s.admin_approval_status || 'pending').toLowerCase();
+                const status = s.admin_approval_status || 'pending';
                 const safeEmail = encodeURIComponent(s.email || '');
                 html += `
                     <tr>
@@ -700,10 +692,10 @@
             if (!seller) return;
 
             selectedSellerEmail = seller.email;
-            const status = (seller.admin_approval_status || 'pending').toLowerCase();
             document.getElementById('modalBrandTitle').innerText = `Seller: ${seller.brand_name || 'Profile Details'}`;
 
-            document.getElementById('modalInfoBody').innerHTML = `
+            const modalBody = document.getElementById('modalInfoBody');
+            modalBody.innerHTML = `
                 <div class="info-group"><label>Seller Unique ID</label><p><code>${seller.seller_id}</code></p></div>
                 <div class="info-group"><label>Full Owner Name</label><p>${seller.full_name || 'N/A'}</p></div>
                 <div class="info-group"><label>Email Address</label><p>${seller.email}</p></div>
@@ -713,7 +705,7 @@
                 <div class="info-group"><label>Identity Document (${seller.doc_type || 'NID'})</label><p>${seller.doc_number || 'N/A'}</p></div>
                 <div class="info-group"><label>Full Address</label><p>${seller.full_address || 'N/A'}</p></div>
                 <div class="info-group"><label>Country & IP</label><p>${seller.country || 'BD'} (${seller.last_ip || 'Unknown'})</p></div>
-                <div class="info-group"><label>Approval Status</label><p><span class="badge ${status}">${status}</span></p></div>
+                <div class="info-group"><label>Approval Status</label><p><span class="badge ${seller.admin_approval_status || 'pending'}">${seller.admin_approval_status || 'pending'}</span></p></div>
             `;
 
             document.getElementById('sellerModal').style.display = 'flex';
@@ -743,33 +735,20 @@
             try {
                 const response = await fetch('/api/seller/update-status', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Cache-Control': 'no-cache'
-                    },
-                    body: JSON.stringify({
-                        email: normalizedEmail,
-                        status: newStatus
-                    })
+                    headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-cache' },
+                    body: JSON.stringify({ email: normalizedEmail, status: newStatus })
                 });
 
-                const rawText = await response.text();
-                let result = {};
-                try {
-                    result = JSON.parse(rawText);
-                } catch (_) {
-                    throw new Error(`HTTP ${response.status}: ${rawText.slice(0, 120) || 'Invalid server response'}`);
-                }
-
+                const result = await response.json().catch(() => ({}));
                 if (!response.ok || !result.success) {
-                    throw new Error(result.error || result.message || `HTTP ${response.status} error`);
+                    throw new Error(result.error || 'Server sync failed');
                 }
 
                 await fetchSellers();
                 closeModal();
-            } catch (err) {
-                console.error("Status update error:", err);
-                alert(`Error updating status: ${err.message}`);
+            } catch (e) {
+                console.error("Server sync failed:", e);
+                alert(`Error updating status: ${e.message}`);
             } finally {
                 isUpdatingStatus = false;
                 renderTable();
