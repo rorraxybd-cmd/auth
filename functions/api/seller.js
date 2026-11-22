@@ -1,4 +1,5 @@
-async function handleSellerRequest(request, env) {
+export async function onRequest(context) {
+  const { request, env } = context;
   const url = new URL(request.url);
 
   const corsHeaders = {
@@ -8,13 +9,13 @@ async function handleSellerRequest(request, env) {
   };
 
   if (request.method === "OPTIONS") {
-    return new Response(null, { status: 204, headers: corsHeaders });
+    return new Response(null, { headers: corsHeaders });
   }
 
   const db = env.retail || env.DB;
   if (!db) {
     return new Response(
-      JSON.stringify({ success: false, error: "Database binding (retail / DB) not found" }),
+      JSON.stringify({ success: false, error: "Database binding not found" }),
       {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json", "Cache-Control": "no-store" },
@@ -23,13 +24,13 @@ async function handleSellerRequest(request, env) {
   }
 
   try {
-    const pathname = url.pathname.replace(/\/+$/, "");
+    const pathname = url.pathname;
 
     // 1. Send Magic Link & Check Existing Profile Status
-    if (pathname.endsWith("/send-magic-link")) {
+    if (pathname.includes("/send-magic-link")) {
       if (request.method !== "POST") {
         return new Response(
-          JSON.stringify({ success: false, error: "Method not allowed" }),
+          JSON.stringify({ error: "Method not allowed" }),
           {
             status: 405,
             headers: { ...corsHeaders, "Content-Type": "application/json", "Cache-Control": "no-store" },
@@ -43,7 +44,7 @@ async function handleSellerRequest(request, env) {
 
       if (!email) {
         return new Response(
-          JSON.stringify({ success: false, error: "Email required" }),
+          JSON.stringify({ error: "Email required" }),
           {
             status: 400,
             headers: { ...corsHeaders, "Content-Type": "application/json", "Cache-Control": "no-store" },
@@ -79,7 +80,7 @@ async function handleSellerRequest(request, env) {
       await db.prepare(sqlMagic).bind(uniqueSellerId, email, mobile_number, token, expiresAt, clientIp, ipCountry, userAgent, email).run();
 
       const magicLink = `https://${url.hostname}/api/seller/verify-magic?token=${token}`;
-      const isProfileComplete = Boolean(existingSeller && existingSeller.brand_name && existingSeller.full_name);
+      const isProfileComplete = existingSeller && existingSeller.brand_name && existingSeller.full_name ? true : false;
 
       return new Response(
         JSON.stringify({
@@ -97,7 +98,7 @@ async function handleSellerRequest(request, env) {
     }
 
     // 2. Verify Magic Link Token Endpoint & Smart Redirect
-    if (pathname.endsWith("/verify-magic")) {
+    if (pathname.includes("/verify-magic")) {
       const token = url.searchParams.get("token");
       if (!token) {
         return new Response("Invalid Verification Token", { status: 400 });
@@ -122,9 +123,9 @@ async function handleSellerRequest(request, env) {
     }
 
     // 2.5. Admin Update Status Endpoint (/update-status) -> Approve / Reject / Pending
-    if (pathname.endsWith("/update-status")) {
+    if (pathname.includes("/update-status")) {
       if (request.method !== "POST") {
-        return new Response(JSON.stringify({ success: false, error: `Method ${request.method} not allowed on /update-status` }), {
+        return new Response(JSON.stringify({ success: false, error: "Method not allowed" }), {
           status: 405,
           headers: { ...corsHeaders, "Content-Type": "application/json", "Cache-Control": "no-store" },
         });
@@ -132,60 +133,37 @@ async function handleSellerRequest(request, env) {
 
       const bodyData = await request.json().catch(() => ({}));
       const email = (bodyData.email || "").toLowerCase().trim();
-      const newStatus = (bodyData.status || bodyData.admin_approval_status || "").toLowerCase().trim();
+      const newStatus = (bodyData.status || "pending").toLowerCase().trim();
 
       if (!email) {
-        return new Response(JSON.stringify({ success: false, error: "Email required" }), {
-          status: 400,
-          headers: { ...corsHeaders, "Content-Type": "application/json", "Cache-Control": "no-store" },
-        });
+        return new Response(
+          JSON.stringify({ success: false, error: "Email required" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json", "Cache-Control": "no-store" } }
+        );
       }
 
       if (!["pending", "approved", "rejected"].includes(newStatus)) {
-        return new Response(JSON.stringify({ success: false, error: `Invalid status: ${newStatus}` }), {
-          status: 400,
-          headers: { ...corsHeaders, "Content-Type": "application/json", "Cache-Control": "no-store" },
-        });
-      }
-
-      const existingRow = await db.prepare("SELECT email, seller_id, admin_approval_status FROM sellers WHERE LOWER(TRIM(email)) = ?")
-        .bind(email)
-        .first();
-
-      if (!existingRow) {
-        return new Response(JSON.stringify({ success: false, error: `Seller not found for ${email}` }), {
-          status: 404,
-          headers: { ...corsHeaders, "Content-Type": "application/json", "Cache-Control": "no-store" },
-        });
+        return new Response(
+          JSON.stringify({ success: false, error: "Invalid status" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json", "Cache-Control": "no-store" } }
+        );
       }
 
       await db.prepare("UPDATE sellers SET admin_approval_status = ? WHERE LOWER(TRIM(email)) = ?")
         .bind(newStatus, email)
         .run();
 
-      const updatedRow = await db.prepare("SELECT email, seller_id, admin_approval_status FROM sellers WHERE LOWER(TRIM(email)) = ?")
-        .bind(email)
-        .first();
-
       return new Response(
-        JSON.stringify({
-          success: true,
-          message: `Seller status updated to ${newStatus}`,
-          admin_approval_status: updatedRow ? updatedRow.admin_approval_status : newStatus,
-          data: updatedRow,
-        }),
-        {
-          status: 200,
-          headers: { ...corsHeaders, "Content-Type": "application/json", "Cache-Control": "no-store" },
-        }
+        JSON.stringify({ success: true, message: `Seller status updated to ${newStatus}`, admin_approval_status: newStatus }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json", "Cache-Control": "no-store" } }
       );
     }
 
     // 3. POST Upsert / Save Seller Profile Information
     if (request.method === "POST") {
       const data = await request.json().catch(() => ({}));
-      const email = (data.email || "").toLowerCase().trim();
-      const mobileNumber = (data.mobile_number || data.phone || "").trim();
+      const email = (data.email || data.seller_id || "").toLowerCase().trim();
+      const mobileNumber = data.mobile_number || data.phone || "";
       const clientIp = request.headers.get("cf-connecting-ip") || "Unknown";
       const country = request.headers.get("cf-ipcountry") || data.country || "Bangladesh";
       const userAgent = request.headers.get("user-agent") || "Unknown";
@@ -203,7 +181,7 @@ async function handleSellerRequest(request, env) {
 
       const emailPrefix = email.split("@")[0].replace(/[^a-z0-9]/g, "").substring(0, 6);
       const fallbackSellerId = `rorraxy-${emailPrefix}-${Math.random().toString(36).substring(2, 8)}`;
-      const finalSellerId = data.seller_id && String(data.seller_id).startsWith("rorraxy-") ? String(data.seller_id) : fallbackSellerId;
+      const finalSellerId = data.seller_id && data.seller_id.startsWith("rorraxy-") ? data.seller_id : fallbackSellerId;
 
       const sqlUpsert = `
         INSERT INTO sellers (
@@ -297,8 +275,8 @@ async function handleSellerRequest(request, env) {
     }
 
     return new Response(
-      JSON.stringify({ success: true, message: "Seller API Active" }),
-      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json", "Cache-Control": "no-store" } }
+      JSON.stringify({ message: "Seller API Active" }),
+      { status: 200, headers: { ...corsHeaders, "Cache-Control": "no-store" } }
     );
   } catch (err) {
     return new Response(
@@ -310,13 +288,3 @@ async function handleSellerRequest(request, env) {
     );
   }
 }
-
-export async function onRequest(context) {
-  return handleSellerRequest(context.request, context.env);
-}
-
-export default {
-  async fetch(request, env) {
-    return handleSellerRequest(request, env);
-  },
-};
