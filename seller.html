@@ -4,11 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ROORaxy Enterprise - Advanced Seller & Financial Management</title>
-    <!-- Google Fonts & FontAwesome -->
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <!-- কঠোর সিকিউরিটি গার্ড: ভেরিফাই এবং মাস্টার পাসওয়ার্ড দেওয়া না থাকলে মূল পেজে রিডাইরেক্ট হবে -->
+
     <script>
         (function() {
             const v1 = localStorage.getItem('rorraxy_admin_verified');
@@ -27,7 +25,6 @@
             --card-border: #1a1a24;
             --gold-gradient: linear-gradient(135deg, #bf953f 0%, #fcf6ba 25%, #b38728 50%, #fbf5b7 75%, #aa771c 100%);
             --gold-solid: #d4af37;
-            --pink-love: #ff2a85;
             --accent-green: #00ff80;
             --accent-red: #ff4d4d;
             --accent-blue: #00e5ff;
@@ -50,7 +47,6 @@
             display: flex;
         }
 
-        /* Sidebar Styling */
         aside {
             width: 260px;
             background: var(--card-soft);
@@ -96,7 +92,6 @@
             border-left: 4px solid var(--gold-solid);
         }
 
-        /* Main Content Area */
         main {
             margin-left: 260px;
             flex-grow: 1;
@@ -144,7 +139,6 @@
             font-weight: 700;
         }
 
-        /* Controls & Filters Bar */
         .controls-bar {
             display: flex;
             justify-content: space-between;
@@ -199,7 +193,6 @@
             font-size: 14px;
         }
 
-        /* Table Container */
         .table-container {
             background: var(--card-soft);
             border: 1px solid var(--card-border);
@@ -241,7 +234,6 @@
             text-decoration: underline;
         }
 
-        /* Badges */
         .badge {
             padding: 5px 12px;
             border-radius: 20px;
@@ -256,7 +248,6 @@
         .badge.rejected { background: rgba(255, 77, 77, 0.15); color: var(--accent-red); border: 1px solid rgba(255, 77, 77, 0.3); }
         .badge.paid { background: rgba(0, 229, 255, 0.15); color: var(--accent-blue); border: 1px solid rgba(0, 229, 255, 0.3); }
 
-        /* Action Buttons inside Table */
         .btn-action {
             padding: 6px 12px;
             border-radius: 6px;
@@ -270,9 +261,9 @@
 
         .btn-approve { background: var(--accent-green); color: #000; }
         .btn-deny { background: var(--accent-red); color: #fff; }
-        .btn-action:hover { opacity: 0.85; }
+        .btn-action:hover:not(:disabled) { opacity: 0.85; }
+        .btn-action:disabled { opacity: 0.5; cursor: not-allowed; }
 
-        /* Modal Popup Styling */
         .modal-overlay {
             position: fixed;
             top: 0;
@@ -321,7 +312,6 @@
             cursor: pointer;
         }
 
-        /* Tabs inside Modal */
         .modal-tabs {
             display: flex;
             gap: 15px;
@@ -408,7 +398,6 @@
             color: #000;
         }
 
-        /* Pagination Footer */
         .pagination-container {
             display: flex;
             justify-content: space-between;
@@ -431,7 +420,7 @@
         .pagination-btns button:hover:not(:disabled) {
             border-color: var(--gold-solid);
         }
-        
+
         .pagination-btns button:disabled {
             opacity: 0.4;
             cursor: not-allowed;
@@ -440,7 +429,6 @@
 </head>
 <body>
 
-    <!-- Sidebar Menu -->
     <aside>
         <div class="brand-box">ROOROXY ADMIN</div>
         <ul class="nav-links">
@@ -451,7 +439,6 @@
         </ul>
     </aside>
 
-    <!-- Main Section -->
     <main>
         <header>
             <h1>Seller Enterprise Management & Financials</h1>
@@ -460,7 +447,6 @@
             </div>
         </header>
 
-        <!-- Stats Overview -->
         <div class="stats-grid">
             <div class="stat-card">
                 <h3>Total Registered Sellers</h3>
@@ -480,7 +466,6 @@
             </div>
         </div>
 
-        <!-- Controls: Search & Status Filter -->
         <div class="controls-bar">
             <div class="search-box">
                 <i class="fa-solid fa-search"></i>
@@ -496,7 +481,6 @@
             </div>
         </div>
 
-        <!-- Sellers Table -->
         <div class="table-container">
             <table>
                 <thead>
@@ -511,11 +495,10 @@
                 </thead>
                 <tbody id="sellersTableBody">
                     <tr>
-                        <td colspan="6" style="text-align: center; color: var(--text-gray); padding: 40px;">Loading massive seller database...</td>
+                        <td colspan="6" style="text-align: center; color: var(--text-gray); padding: 40px;">Loading seller database...</td>
                     </tr>
                 </tbody>
             </table>
-            <!-- Pagination Footer -->
             <div class="pagination-container">
                 <span id="paginationInfo" style="font-size: 13px; color: var(--text-gray);">Showing 0-0 of 0 sellers</span>
                 <div class="pagination-btns">
@@ -526,7 +509,6 @@
         </div>
     </main>
 
-    <!-- Advanced Multi-Tab Seller Detail & Financial/Shipment Modal -->
     <div class="modal-overlay" id="sellerModal">
         <div class="modal-content">
             <div class="modal-header">
@@ -534,19 +516,16 @@
                 <button class="close-modal" onclick="closeModal()"><i class="fa-solid fa-xmark"></i></button>
             </div>
 
-            <!-- Modal Navigation Tabs -->
             <div class="modal-tabs">
                 <button class="tab-btn active" onclick="switchTab('profile', event)"><i class="fa-solid fa-id-card"></i> Profile & Verification</button>
                 <button class="tab-btn" onclick="switchTab('finance', event)"><i class="fa-solid fa-wallet"></i> Payments & Payouts</button>
                 <button class="tab-btn" onclick="switchTab('shipment', event)"><i class="fa-solid fa-truck-fast"></i> Shipment & Logistics</button>
             </div>
 
-            <!-- Tab 1: Profile & Documents -->
             <div id="tab-profile" class="tab-pane active">
                 <div class="info-grid" id="modalInfoBody"></div>
             </div>
 
-            <!-- Tab 2: Payments & Escrow Ledger -->
             <div id="tab-finance" class="tab-pane">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                     <h3 style="font-size: 16px; color: var(--gold-solid);">Financial Ledger & Settlement</h3>
@@ -572,7 +551,6 @@
                 </table>
             </div>
 
-            <!-- Tab 3: Shipment & Logistics Tracking -->
             <div id="tab-shipment" class="tab-pane">
                 <h3 style="font-size: 16px; color: var(--gold-solid); margin-bottom: 15px;">Active Consignments & Shipments</h3>
                 <table class="sub-table">
@@ -591,7 +569,6 @@
                 </table>
             </div>
 
-            <!-- Modal Action Buttons -->
             <div class="modal-actions">
                 <button class="btn-lg btn-payout" onclick="processPayout()"><i class="fa-solid fa-money-bill-transfer"></i> Release Payout</button>
                 <button class="btn-lg btn-deny" onclick="updateSellerStatusFromModal('rejected')"><i class="fa-solid fa-ban"></i> Deny</button>
@@ -606,18 +583,21 @@
         let currentPage = 1;
         const pageSize = 15;
         let selectedSellerEmail = '';
+        let isUpdatingStatus = false;
 
         async function fetchSellers() {
             try {
-                const response = await fetch('/api/seller');
+                const response = await fetch(`/api/seller?_t=${Date.now()}`, {
+                    cache: 'no-store'
+                });
                 const result = await response.json();
-                if(result.success && Array.isArray(result.data)) {
+                if (result.success && Array.isArray(result.data)) {
                     allSellersData = result.data;
                 } else {
                     allSellersData = [];
                 }
                 updateStats();
-                filterSellers();
+                filterSellers(false);
             } catch (err) {
                 console.error("Failed to load database:", err);
                 document.getElementById('sellersTableBody').innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--accent-red); padding: 30px;">Error connecting to secure database.</td></tr>`;
@@ -631,13 +611,14 @@
             document.getElementById('stat-escrow').innerText = '৳48,250';
         }
 
-        function filterSellers() {
-            const searchQuery = document.getElementById('searchInput').value.toLowerCase();
+        function filterSellers(resetPage = true) {
+            const searchQuery = document.getElementById('searchInput').value.toLowerCase().trim();
             const statusVal = document.getElementById('statusFilter').value;
 
             filteredData = allSellersData.filter(seller => {
-                const matchStatus = (statusVal === 'all') || ((seller.admin_approval_status || 'pending') === statusVal);
-                const matchSearch = 
+                const currentStatus = (seller.admin_approval_status || 'pending').toLowerCase();
+                const matchStatus = (statusVal === 'all') || (currentStatus === statusVal);
+                const matchSearch =
                     (seller.brand_name || '').toLowerCase().includes(searchQuery) ||
                     (seller.full_name || '').toLowerCase().includes(searchQuery) ||
                     (seller.email || '').toLowerCase().includes(searchQuery) ||
@@ -646,7 +627,13 @@
                 return matchStatus && matchSearch;
             });
 
-            currentPage = 1;
+            if (resetPage) {
+                currentPage = 1;
+            } else {
+                const maxPage = Math.max(1, Math.ceil(filteredData.length / pageSize));
+                if (currentPage > maxPage) currentPage = maxPage;
+            }
+
             renderTable();
         }
 
@@ -656,7 +643,7 @@
             const end = start + pageSize;
             const paginatedItems = filteredData.slice(start, end);
 
-            if(paginatedItems.length === 0) {
+            if (paginatedItems.length === 0) {
                 tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-gray); padding: 40px;">No sellers found matching criteria.</td></tr>`;
                 document.getElementById('paginationInfo').innerText = `Showing 0 of 0 sellers`;
                 document.getElementById('prevBtn').disabled = true;
@@ -666,12 +653,13 @@
 
             let html = '';
             paginatedItems.forEach(s => {
-                const status = s.admin_approval_status || 'pending';
+                const status = (s.admin_approval_status || 'pending').toLowerCase();
+                const safeEmail = encodeURIComponent(s.email || '');
                 html += `
                     <tr>
                         <td><code>${s.seller_id || 'N/A'}</code></td>
                         <td>
-                            <a class="seller-link" onclick="openSellerModal('${s.email}')">${s.brand_name || 'Unnamed Brand'}</a><br>
+                            <a class="seller-link" onclick="openSellerModalByEncoded('${safeEmail}')">${s.brand_name || 'Unnamed Brand'}</a><br>
                             <span style="font-size: 12px; color: var(--text-gray);">${s.full_name || 'No Owner Name'}</span>
                         </td>
                         <td>
@@ -681,8 +669,8 @@
                         <td>${s.country || 'Bangladesh'}</td>
                         <td><span class="badge ${status}">${status}</span></td>
                         <td>
-                            <button class="btn-action btn-approve" onclick="quickStatusChange('${s.email}', 'approved')"><i class="fa-solid fa-check"></i></button>
-                            <button class="btn-action btn-deny" onclick="quickStatusChange('${s.email}', 'rejected')"><i class="fa-solid fa-ban"></i></button>
+                            <button class="btn-action btn-approve" ${isUpdatingStatus ? 'disabled' : ''} onclick="quickStatusChangeByEncoded('${safeEmail}', 'approved')"><i class="fa-solid fa-check"></i></button>
+                            <button class="btn-action btn-deny" ${isUpdatingStatus ? 'disabled' : ''} onclick="quickStatusChangeByEncoded('${safeEmail}', 'rejected')"><i class="fa-solid fa-ban"></i></button>
                         </td>
                     </tr>
                 `;
@@ -699,15 +687,23 @@
             renderTable();
         }
 
+        function openSellerModalByEncoded(encodedEmail) {
+            openSellerModal(decodeURIComponent(encodedEmail));
+        }
+
+        function quickStatusChangeByEncoded(encodedEmail, newStatus) {
+            quickStatusChange(decodeURIComponent(encodedEmail), newStatus);
+        }
+
         function openSellerModal(email) {
-            const seller = allSellersData.find(s => s.email === email);
-            if(!seller) return;
+            const seller = allSellersData.find(s => (s.email || '').toLowerCase() === (email || '').toLowerCase());
+            if (!seller) return;
 
             selectedSellerEmail = seller.email;
+            const status = (seller.admin_approval_status || 'pending').toLowerCase();
             document.getElementById('modalBrandTitle').innerText = `Seller: ${seller.brand_name || 'Profile Details'}`;
 
-            const modalBody = document.getElementById('modalInfoBody');
-            modalBody.innerHTML = `
+            document.getElementById('modalInfoBody').innerHTML = `
                 <div class="info-group"><label>Seller Unique ID</label><p><code>${seller.seller_id}</code></p></div>
                 <div class="info-group"><label>Full Owner Name</label><p>${seller.full_name || 'N/A'}</p></div>
                 <div class="info-group"><label>Email Address</label><p>${seller.email}</p></div>
@@ -717,7 +713,7 @@
                 <div class="info-group"><label>Identity Document (${seller.doc_type || 'NID'})</label><p>${seller.doc_number || 'N/A'}</p></div>
                 <div class="info-group"><label>Full Address</label><p>${seller.full_address || 'N/A'}</p></div>
                 <div class="info-group"><label>Country & IP</label><p>${seller.country || 'BD'} (${seller.last_ip || 'Unknown'})</p></div>
-                <div class="info-group"><label>Approval Status</label><p><span class="badge ${seller.admin_approval_status || 'pending'}">${seller.admin_approval_status || 'pending'}</span></p></div>
+                <div class="info-group"><label>Approval Status</label><p><span class="badge ${status}">${status}</span></p></div>
             `;
 
             document.getElementById('sellerModal').style.display = 'flex';
@@ -735,29 +731,46 @@
         }
 
         async function quickStatusChange(email, newStatus) {
-            if(!confirm(`Are you sure you want to change status to "${newStatus.toUpperCase()}" for ${email}?`)) return;
+            if (isUpdatingStatus) return;
+            const normalizedEmail = (email || '').toLowerCase().trim();
+            if (!normalizedEmail) return;
 
-            const seller = allSellersData.find(s => s.email === email);
-            if(seller) {
-                seller.admin_approval_status = newStatus;
-                updateStats();
-                filterSellers();
-                closeModal();
+            if (!confirm(`Are you sure you want to change status to "${newStatus.toUpperCase()}" for ${normalizedEmail}?`)) return;
 
-                try {
-                    await fetch('/api/seller/update-status', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ email: email, status: newStatus })
-                    });
-                } catch(e) {
-                    console.error("Server sync failed:", e);
+            isUpdatingStatus = true;
+            renderTable();
+
+            try {
+                const response = await fetch('/api/seller/update-status', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Cache-Control': 'no-cache'
+                    },
+                    body: JSON.stringify({
+                        email: normalizedEmail,
+                        status: newStatus
+                    })
+                });
+
+                const result = await response.json().catch(() => ({}));
+                if (!response.ok || !result.success) {
+                    throw new Error(result.error || 'Failed to update status on server');
                 }
+
+                await fetchSellers();
+                closeModal();
+            } catch (err) {
+                console.error("Status update error:", err);
+                alert(`Error updating status: ${err.message}`);
+            } finally {
+                isUpdatingStatus = false;
+                renderTable();
             }
         }
 
         function updateSellerStatusFromModal(newStatus) {
-            if(selectedSellerEmail) {
+            if (selectedSellerEmail) {
                 quickStatusChange(selectedSellerEmail, newStatus);
             }
         }
