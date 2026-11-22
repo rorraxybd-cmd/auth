@@ -122,67 +122,61 @@ export async function onRequest(context) {
       return Response.redirect(redirectUrl, 302);
     }
 
-    // 2.5. Admin Update Status Endpoint (/update-status) -> Direct Approve / Reject
-    if (pathname.includes("/update-status")) {
-      if (request.method !== "POST") {
-        return new Response(
-          JSON.stringify({ success: false, error: "Method not allowed" }),
-          { status: 405, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-
-      const bodyData = await request.json().catch(() => ({}));
-      const email = (bodyData.email || "").toLowerCase().trim();
-      const newStatus = (bodyData.status || "").toLowerCase().trim();
-      const allowedStatuses = ["approved", "rejected", "pending"];
-
-      if (!email) {
-        return new Response(
-          JSON.stringify({ success: false, error: "Email required" }),
-          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-
-      if (!allowedStatuses.includes(newStatus)) {
-        return new Response(
-          JSON.stringify({ success: false, error: "Invalid status value" }),
-          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-
-      const result = await db
-        .prepare("UPDATE sellers SET admin_approval_status = ? WHERE LOWER(email) = ?")
-        .bind(newStatus, email)
-        .run();
-
-      const updatedSeller = await db
-        .prepare("SELECT email, seller_id, admin_approval_status FROM sellers WHERE LOWER(email) = ?")
-        .bind(email)
-        .first();
-
-      if (!updatedSeller) {
-        return new Response(
-          JSON.stringify({ success: false, error: "Seller not found" }),
-          { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-
-      return new Response(
-        JSON.stringify({
-          success: true,
-          message: `Seller status updated to ${newStatus}`,
-          email: updatedSeller.email,
-          seller_id: updatedSeller.seller_id,
-          admin_approval_status: updatedSeller.admin_approval_status,
-          changes: result?.meta?.changes ?? 1
-        }),
-        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    // 3. POST Upsert / Save Seller Profile Information
+    // 3. All POST Requests: Direct Status Update OR Seller Profile Upsert
     if (request.method === "POST") {
       const data = await request.json().catch(() => ({}));
+
+      // 3A. Direct Admin Approve / Reject (works on both /api/seller and /api/seller/update-status)
+      if (pathname.includes("/update-status") || data.action === "update-status") {
+        const email = (data.email || "").toLowerCase().trim();
+        const newStatus = (data.status || "").toLowerCase().trim();
+        const allowedStatuses = ["approved", "rejected", "pending"];
+
+        if (!email) {
+          return new Response(
+            JSON.stringify({ success: false, error: "Email required" }),
+            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+
+        if (!allowedStatuses.includes(newStatus)) {
+          return new Response(
+            JSON.stringify({ success: false, error: "Invalid status value" }),
+            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+
+        const result = await db
+          .prepare("UPDATE sellers SET admin_approval_status = ? WHERE LOWER(email) = ?")
+          .bind(newStatus, email)
+          .run();
+
+        const updatedSeller = await db
+          .prepare("SELECT email, seller_id, admin_approval_status FROM sellers WHERE LOWER(email) = ?")
+          .bind(email)
+          .first();
+
+        if (!updatedSeller) {
+          return new Response(
+            JSON.stringify({ success: false, error: "Seller not found in database" }),
+            { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+
+        return new Response(
+          JSON.stringify({
+            success: true,
+            message: `Seller status updated to ${newStatus}`,
+            email: updatedSeller.email,
+            seller_id: updatedSeller.seller_id,
+            admin_approval_status: updatedSeller.admin_approval_status,
+            changes: result?.meta?.changes ?? 1
+          }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      // 3B. Upsert / Save Seller Profile Information
       const email = (data.email || data.seller_id || "").toLowerCase().trim();
       const mobileNumber = data.mobile_number || data.phone || "";
       const clientIp = request.headers.get("cf-connecting-ip") || "Unknown";
