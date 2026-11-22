@@ -6,7 +6,7 @@
     <title>ROORaxy Enterprise - Advanced Seller & Financial Management</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
+
     <script>
         (function() {
             const v1 = localStorage.getItem('rorraxy_admin_verified');
@@ -263,6 +263,7 @@
         .btn-approve { background: var(--accent-green); color: #000; }
         .btn-deny { background: var(--accent-red); color: #fff; }
         .btn-action:hover { opacity: 0.85; }
+        .btn-action:disabled { opacity: 0.5; cursor: not-allowed; }
 
         .modal-overlay {
             position: fixed;
@@ -420,7 +421,7 @@
         .pagination-btns button:hover:not(:disabled) {
             border-color: var(--gold-solid);
         }
-        
+
         .pagination-btns button:disabled {
             opacity: 0.4;
             cursor: not-allowed;
@@ -495,7 +496,7 @@
                 </thead>
                 <tbody id="sellersTableBody">
                     <tr>
-                        <td colspan="6" style="text-align: center; color: var(--text-gray); padding: 40px;">Loading massive seller database...</td>
+                        <td colspan="6" style="text-align: center; color: var(--text-gray); padding: 40px;">Loading seller database...</td>
                     </tr>
                 </tbody>
             </table>
@@ -583,10 +584,12 @@
         let currentPage = 1;
         const pageSize = 15;
         let selectedSellerEmail = '';
+        let selectedSellerId = '';
+        let isUpdatingStatus = false;
 
         async function fetchSellers() {
             try {
-                const response = await fetch('/api/seller', { cache: 'no-store' });
+                const response = await fetch(`/api/seller?_t=${Date.now()}`, { cache: 'no-store' });
                 const result = await response.json();
                 if (result.success && Array.isArray(result.data)) {
                     allSellersData = result.data;
@@ -594,7 +597,7 @@
                     allSellersData = [];
                 }
                 updateStats();
-                filterSellers();
+                filterSellers(false);
             } catch (err) {
                 console.error("Failed to load database:", err);
                 document.getElementById('sellersTableBody').innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--accent-red); padding: 30px;">Error connecting to secure database.</td></tr>`;
@@ -608,13 +611,14 @@
             document.getElementById('stat-escrow').innerText = '৳48,250';
         }
 
-        function filterSellers() {
-            const searchQuery = document.getElementById('searchInput').value.toLowerCase();
+        function filterSellers(resetPage = true) {
+            const searchQuery = document.getElementById('searchInput').value.toLowerCase().trim();
             const statusVal = document.getElementById('statusFilter').value;
 
             filteredData = allSellersData.filter(seller => {
-                const matchStatus = (statusVal === 'all') || ((seller.admin_approval_status || 'pending') === statusVal);
-                const matchSearch = 
+                const currentStatus = (seller.admin_approval_status || 'pending').toLowerCase();
+                const matchStatus = (statusVal === 'all') || (currentStatus === statusVal);
+                const matchSearch =
                     (seller.brand_name || '').toLowerCase().includes(searchQuery) ||
                     (seller.full_name || '').toLowerCase().includes(searchQuery) ||
                     (seller.email || '').toLowerCase().includes(searchQuery) ||
@@ -623,7 +627,7 @@
                 return matchStatus && matchSearch;
             });
 
-            currentPage = 1;
+            if (resetPage) currentPage = 1;
             renderTable();
         }
 
@@ -635,7 +639,7 @@
 
             if (paginatedItems.length === 0) {
                 tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-gray); padding: 40px;">No sellers found matching criteria.</td></tr>`;
-                document.getElementById('paginationInfo').innerText = `Showing 0-0 of 0 sellers`;
+                document.getElementById('paginationInfo').innerText = `Showing 0 of 0 sellers`;
                 document.getElementById('prevBtn').disabled = true;
                 document.getElementById('nextBtn').disabled = true;
                 return;
@@ -643,23 +647,25 @@
 
             let html = '';
             paginatedItems.forEach(s => {
-                const status = s.admin_approval_status || 'pending';
+                const status = (s.admin_approval_status || 'pending').toLowerCase();
+                const safeEmail = encodeURIComponent(s.email || '');
+                const safeSellerId = encodeURIComponent(s.seller_id || '');
                 html += `
                     <tr>
                         <td><code>${s.seller_id || 'N/A'}</code></td>
                         <td>
-                            <a class="seller-link" onclick="openSellerModal('${s.email}')">${s.brand_name || 'Unnamed Brand'}</a><br>
+                            <a class="seller-link" onclick="openSellerModalByEncoded('${safeEmail}')">${s.brand_name || 'Unnamed Brand'}</a><br>
                             <span style="font-size: 12px; color: var(--text-gray);">${s.full_name || 'No Owner Name'}</span>
                         </td>
                         <td>
-                            ${s.email}<br>
+                            ${s.email || 'No Email'}<br>
                             <span style="font-size: 12px; color: var(--text-gray);">${s.mobile_number || s.whatsapp || 'No Phone'}</span>
                         </td>
                         <td>${s.country || 'Bangladesh'}</td>
                         <td><span class="badge ${status}">${status}</span></td>
                         <td>
-                            <button class="btn-action btn-approve" onclick="quickStatusChange('${s.email}', 'approved')"><i class="fa-solid fa-check"></i></button>
-                            <button class="btn-action btn-deny" onclick="quickStatusChange('${s.email}', 'rejected')"><i class="fa-solid fa-ban"></i></button>
+                            <button class="btn-action btn-approve" ${isUpdatingStatus ? 'disabled' : ''} onclick="quickStatusChangeByEncoded('${safeEmail}', '${safeSellerId}', 'approved')"><i class="fa-solid fa-check"></i></button>
+                            <button class="btn-action btn-deny" ${isUpdatingStatus ? 'disabled' : ''} onclick="quickStatusChangeByEncoded('${safeEmail}', '${safeSellerId}', 'rejected')"><i class="fa-solid fa-ban"></i></button>
                         </td>
                     </tr>
                 `;
@@ -676,15 +682,24 @@
             renderTable();
         }
 
+        function openSellerModalByEncoded(encodedEmail) {
+            openSellerModal(decodeURIComponent(encodedEmail));
+        }
+
+        function quickStatusChangeByEncoded(encodedEmail, encodedSellerId, newStatus) {
+            quickStatusChange(decodeURIComponent(encodedEmail), newStatus, decodeURIComponent(encodedSellerId));
+        }
+
         function openSellerModal(email) {
-            const seller = allSellersData.find(s => s.email === email);
+            const seller = allSellersData.find(s => (s.email || '').toLowerCase() === (email || '').toLowerCase());
             if (!seller) return;
 
-            selectedSellerEmail = seller.email;
+            selectedSellerEmail = seller.email || '';
+            selectedSellerId = seller.seller_id || '';
+            const status = (seller.admin_approval_status || 'pending').toLowerCase();
             document.getElementById('modalBrandTitle').innerText = `Seller: ${seller.brand_name || 'Profile Details'}`;
 
-            const modalBody = document.getElementById('modalInfoBody');
-            modalBody.innerHTML = `
+            document.getElementById('modalInfoBody').innerHTML = `
                 <div class="info-group"><label>Seller Unique ID</label><p><code>${seller.seller_id}</code></p></div>
                 <div class="info-group"><label>Full Owner Name</label><p>${seller.full_name || 'N/A'}</p></div>
                 <div class="info-group"><label>Email Address</label><p>${seller.email}</p></div>
@@ -694,7 +709,7 @@
                 <div class="info-group"><label>Identity Document (${seller.doc_type || 'NID'})</label><p>${seller.doc_number || 'N/A'}</p></div>
                 <div class="info-group"><label>Full Address</label><p>${seller.full_address || 'N/A'}</p></div>
                 <div class="info-group"><label>Country & IP</label><p>${seller.country || 'BD'} (${seller.last_ip || 'Unknown'})</p></div>
-                <div class="info-group"><label>Approval Status</label><p><span class="badge ${seller.admin_approval_status || 'pending'}">${seller.admin_approval_status || 'pending'}</span></p></div>
+                <div class="info-group"><label>Approval Status</label><p><span class="badge ${status}">${status}</span></p></div>
             `;
 
             document.getElementById('sellerModal').style.display = 'flex';
@@ -711,34 +726,50 @@
             document.getElementById('sellerModal').style.display = 'none';
         }
 
-        async function quickStatusChange(email, newStatus) {
-            const seller = allSellersData.find(s => s.email === email);
-            if (seller) {
-                seller.admin_approval_status = newStatus;
-                updateStats();
-                filterSellers();
-                closeModal();
+        async function quickStatusChange(email, newStatus, sellerId = '') {
+            if (isUpdatingStatus) return;
+            const normalizedEmail = (email || '').toLowerCase().trim();
+            const normalizedSellerId = (sellerId || '').trim();
+            if (!normalizedEmail && !normalizedSellerId) return;
 
-                try {
-                    await fetch('/api/seller/update-status', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ email: email, status: newStatus })
-                    });
-                } catch (e) {
-                    console.error("Server sync failed:", e);
+            isUpdatingStatus = true;
+            renderTable();
+
+            try {
+                const response = await fetch('/api/seller/update-status', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-cache' },
+                    body: JSON.stringify({
+                        email: normalizedEmail,
+                        seller_id: normalizedSellerId,
+                        status: newStatus
+                    })
+                });
+
+                const result = await response.json().catch(() => ({}));
+                if (!response.ok || !result.success) {
+                    throw new Error(result.error || 'Failed to update status on server');
                 }
+
+                await fetchSellers();
+                closeModal();
+            } catch (e) {
+                console.error("Status update error:", e);
+                alert(e.message);
+            } finally {
+                isUpdatingStatus = false;
+                renderTable();
             }
         }
 
         function updateSellerStatusFromModal(newStatus) {
-            if (selectedSellerEmail) {
-                quickStatusChange(selectedSellerEmail, newStatus);
+            if (selectedSellerEmail || selectedSellerId) {
+                quickStatusChange(selectedSellerEmail, newStatus, selectedSellerId);
             }
         }
 
         function processPayout() {
-            alert(`Payout transfer initiated successfully for seller: ${selectedSellerEmail}`);
+            alert(`Payout transfer initiated successfully for seller: ${selectedSellerEmail || selectedSellerId}`);
         }
 
         window.onload = () => {
