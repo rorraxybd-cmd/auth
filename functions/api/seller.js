@@ -20,9 +20,9 @@ export async function onRequest(context) {
   try {
     const pathname = url.pathname;
 
-    if (pathname.includes("/send-magic-link")) {
+    if (pathname.endsWith("/send-magic-link") || pathname.includes("/seller/send-magic-link")) {
       if (request.method !== "POST") {
-        return jsonResponse({ error: "Method not allowed" }, 405, corsHeaders);
+        return jsonResponse({ success: false, error: "Method not allowed" }, 405, corsHeaders);
       }
 
       const bodyData = await request.json().catch(() => ({}));
@@ -30,10 +30,10 @@ export async function onRequest(context) {
       const mobile_number = (bodyData.mobile_number || "").trim();
 
       if (!email) {
-        return jsonResponse({ error: "Email required" }, 400, corsHeaders);
+        return jsonResponse({ success: false, error: "Email required" }, 400, corsHeaders);
       }
 
-      const existingSeller = await db.prepare("SELECT * FROM sellers WHERE email = ?").bind(email).first();
+      const existingSeller = await db.prepare("SELECT * FROM sellers WHERE LOWER(TRIM(email)) = ?").bind(email).first();
       const emailPrefix = email.split("@")[0].replace(/[^a-z0-9]/g, "").substring(0, 6);
       const randomSuffix = Math.random().toString(36).substring(2, 8);
       const uniqueSellerId = existingSeller?.seller_id || `rorraxy-${emailPrefix}-${randomSuffix}`;
@@ -48,7 +48,7 @@ export async function onRequest(context) {
         INSERT INTO sellers (
           seller_id, email, mobile_number, verification_token, token_expires_at,
           last_ip, ip_country, user_agent, is_verified, admin_approval_status
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, 'pending')
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, COALESCE((SELECT admin_approval_status FROM sellers WHERE LOWER(TRIM(email)) = ?), 'pending'))
         ON CONFLICT(email) DO UPDATE SET
           verification_token = excluded.verification_token,
           token_expires_at = excluded.token_expires_at,
@@ -59,7 +59,7 @@ export async function onRequest(context) {
       `;
 
       await db.prepare(sqlMagic).bind(
-        uniqueSellerId, email, mobile_number, token, expiresAt, clientIp, ipCountry, userAgent
+        uniqueSellerId, email, mobile_number, token, expiresAt, clientIp, ipCountry, userAgent, email
       ).run();
 
       const magicLink = `https://${url.hostname}/api/seller/verify-magic?token=${token}`;
@@ -74,7 +74,7 @@ export async function onRequest(context) {
       }, 200, corsHeaders);
     }
 
-    if (pathname.includes("/verify-magic")) {
+    if (pathname.endsWith("/verify-magic") || pathname.includes("/seller/verify-magic")) {
       const token = url.searchParams.get("token");
       if (!token) {
         return new Response("Invalid Verification Token", { status: 400 });
@@ -95,7 +95,7 @@ export async function onRequest(context) {
       return Response.redirect(redirectUrl, 302);
     }
 
-    if (pathname.includes("/update-status")) {
+    if (pathname.endsWith("/update-status") || pathname.includes("/seller/update-status")) {
       if (request.method !== "POST") {
         return jsonResponse({ success: false, error: "Method not allowed" }, 405, corsHeaders);
       }
@@ -110,10 +110,18 @@ export async function onRequest(context) {
       }
 
       if (!allowedStatuses.includes(newStatus)) {
-        return jsonResponse({ success: false, error: "Invalid status value" }, 400, corsHeaders);
+        return jsonResponse({ success: false, error: `Invalid status value: ${newStatus}` }, 400, corsHeaders);
       }
 
-      const updateResult = await db.prepare(
+      const existing = await db.prepare(
+        "SELECT email, seller_id, admin_approval_status FROM sellers WHERE LOWER(TRIM(email)) = ?"
+      ).bind(email).first();
+
+      if (!existing) {
+        return jsonResponse({ success: false, error: `Seller not found for ${email}` }, 404, corsHeaders);
+      }
+
+      await db.prepare(
         "UPDATE sellers SET admin_approval_status = ? WHERE LOWER(TRIM(email)) = ?"
       ).bind(newStatus, email).run();
 
@@ -121,14 +129,9 @@ export async function onRequest(context) {
         "SELECT email, seller_id, admin_approval_status FROM sellers WHERE LOWER(TRIM(email)) = ?"
       ).bind(email).first();
 
-      if (!updatedSeller) {
-        return jsonResponse({ success: false, error: "Seller not found" }, 404, corsHeaders);
-      }
-
       return jsonResponse({
         success: true,
         message: `Seller status updated to ${newStatus}`,
-        changes: updateResult?.meta?.changes ?? 1,
         data: updatedSeller,
       }, 200, corsHeaders);
     }
@@ -222,7 +225,7 @@ export async function onRequest(context) {
       return jsonResponse({ success: true, data: allSellers.results }, 200, corsHeaders);
     }
 
-    return jsonResponse({ message: "Seller API Active" }, 200, corsHeaders);
+    return jsonResponse({ success: true, message: "Seller API Active" }, 200, corsHeaders);
   } catch (err) {
     return jsonResponse({ success: false, error: err.message }, 500, corsHeaders);
   }
