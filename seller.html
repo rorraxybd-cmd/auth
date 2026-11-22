@@ -589,17 +589,24 @@
         async function fetchSellers() {
             try {
                 const response = await fetch(`/api/seller?_t=${Date.now()}`, { cache: 'no-store' });
-                const result = await response.json();
-                if (result.success && Array.isArray(result.data)) {
-                    allSellersData = result.data;
-                } else {
-                    allSellersData = [];
+                const rawText = await response.text();
+                let result = {};
+                try {
+                    result = JSON.parse(rawText);
+                } catch (_) {
+                    throw new Error(`Invalid JSON (${response.status}): ${rawText.slice(0, 100)}`);
                 }
+
+                if (!response.ok || !result.success) {
+                    throw new Error(result.error || `HTTP ${response.status}`);
+                }
+
+                allSellersData = Array.isArray(result.data) ? result.data : [];
                 updateStats();
                 filterSellers(false);
             } catch (err) {
                 console.error("Failed to load database:", err);
-                document.getElementById('sellersTableBody').innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--accent-red); padding: 30px;">Error connecting to secure database.</td></tr>`;
+                document.getElementById('sellersTableBody').innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--accent-red); padding: 30px;">Error connecting to secure database: ${err.message}</td></tr>`;
             }
         }
 
@@ -739,9 +746,16 @@
                     body: JSON.stringify({ email: normalizedEmail, status: newStatus })
                 });
 
-                const result = await response.json().catch(() => ({}));
+                const rawText = await response.text();
+                let result = {};
+                try {
+                    result = JSON.parse(rawText);
+                } catch (_) {
+                    throw new Error(`HTTP ${response.status}: ${rawText.slice(0, 120) || 'Invalid server response'}`);
+                }
+
                 if (!response.ok || !result.success) {
-                    throw new Error(result.error || 'Server sync failed');
+                    throw new Error(result.error || `HTTP ${response.status} status sync failed`);
                 }
 
                 await fetchSellers();
