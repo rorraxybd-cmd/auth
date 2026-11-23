@@ -64,7 +64,7 @@ export async function onRequestPost(context) {
     const priceMinWhole = (baseCost * (1 + (wMargin * 0.75))).toFixed(2);
     const priceBulk = (baseCost * (1 + (wMargin * 0.5))).toFixed(2);
 
-    // ৪. মাল্টিপল ইমেজ ও গ্যালারি এক্সট্রাকশন লজিক (সরাসরি CJ ইমেজ)
+    // ৪. মাল্টিপল ইমেজ ও গ্যালারি এক্সট্রাকশন লজিক
     let rawImages = [];
 
     const extract = (source) => {
@@ -121,16 +121,43 @@ export async function onRequestPost(context) {
     const mainImage = imagesArray.length > 0 ? imagesArray[0] : 'https://images.unsplash.com/photo-1523275335684-37898b6baf30';
     const imagesListJson = JSON.stringify(imagesArray);
 
+    // ৫. ভ্যারিয়েন্ট ও অটো-SKU তৈরি
+    const pidShort = String(cjProductId).slice(-6);
+    const makeCode = (label, idx) => {
+      const clean = String(label || '')
+        .toUpperCase()
+        .replace(/[^A-Z0-9]/g, '')
+        .slice(0, 4);
+      return clean || `V${idx + 1}`;
+    };
+
     let sizesList = [];
-    if (p.variants && Array.isArray(p.variants)) {
-      p.variants.forEach(v => {
-        if (v.variantName) sizesList.push(v.variantName);
-        else if (v.size) sizesList.push(v.size);
+    let variantSkus = [];
+
+    if (p.variants && Array.isArray(p.variants) && p.variants.length > 0) {
+      p.variants.forEach((v, idx) => {
+        const vName = v.variantName || v.size || v.variantKey || `Option ${idx + 1}`;
+        sizesList.push(vName);
+        const generatedSku = (v.variantSku || v.sku || `${pidShort}-${makeCode(vName, idx)}`).trim();
+        variantSkus.push({
+          variant: vName,
+          sku: generatedSku,
+          image: v.variantImage || v.imageUrl || mainImage
+        });
+      });
+    } else {
+      variantSkus.push({
+        variant: 'Default',
+        sku: (p.productSku || p.sku || `${pidShort}-MAIN`).trim(),
+        image: mainImage
       });
     }
-    sizesList = [...new Set(sizesList)];
 
-    // ৫. ভিডিও লিংক হ্যান্ডেলিং (API এবং Manual Input উভয় ব্যাকআপ সহ)
+    sizesList = [...new Set(sizesList)];
+    const primarySku = variantSkus[0]?.sku || `${pidShort}-MAIN`;
+    const variantsSkuJson = JSON.stringify(variantSkus);
+
+    // ৬. ভিডিও লিংক হ্যান্ডেলিং
     const apiVideoUrl = p.productVideo || p.video || p.videoUrl || p.materialVideo || p.mediaVideo || '';
     const finalVideoUrl = manualVideoUrl && manualVideoUrl.startsWith('http') ? manualVideoUrl : apiVideoUrl;
 
@@ -143,10 +170,10 @@ export async function onRequestPost(context) {
       .replace(/<\/tr>/gi, '\n')
       .replace(/<\/td>/gi, ' : ')
       .replace(/<[^>]+>/g, '')
-      .replace(/&nbsp;/g, ' ')
-      .replace(/&amp;/g, '&')
-      .replace(/&quot;/g, '"')
-      .replace(/&#39;/g, "'")
+      .replace(/ /g, ' ')
+      .replace(/&/g, '&')
+      .replace(/"/g, '"')
+      .replace(/'/g, "'")
       .replace(/\s\s+/g, ' ')
       .replace(/\n\s*\n/g, '\n\n')
       .trim();
@@ -160,6 +187,8 @@ export async function onRequestPost(context) {
         success: true,
         data: {
           title: p.productNameEn || 'Global Product',
+          sku: primarySku,
+          variantsSku: variantSkus,
           retailPrice,
           priceSample,
           imagesCount: imagesArray.length,
@@ -170,10 +199,12 @@ export async function onRequestPost(context) {
       }), { headers: { "Content-Type": "application/json" } });
     }
 
-    // ৬. Database Save (সরাসরি CJ ইমেজ লিংকসহ)
+    // ৭. D1 Database Save
     await env.retail.prepare(`
       INSERT INTO products (
         cj_product_id,
+        sku,
+        variants_sku_json,
         vendor_type,
         title,
         description,
@@ -191,9 +222,11 @@ export async function onRequestPost(context) {
         target_country,
         discount_rate,
         created_at
-      ) VALUES (?, 'dropship', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'both', ?, ?, ?, ?, CURRENT_TIMESTAMP)
+      ) VALUES (?, ?, ?, 'dropship', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'both', ?, ?, ?, ?, CURRENT_TIMESTAMP)
     `).bind(
       cjProductId,
+      primarySku,
+      variantsSkuJson,
       p.productNameEn || 'Global Product',
       cleanDescription,
       retailPrice,
@@ -212,9 +245,11 @@ export async function onRequestPost(context) {
 
     return new Response(JSON.stringify({
       success: true,
-      message: "প্রোডাক্টের ক্যাটাগরি, ডিসকাউন্ট, গ্যালারি ইমেজ এবং ভিডিও সফলভাবে সেভ হয়েছে!",
+      message: "প্রোডাক্টের SKU, ক্যাটাগরি, ডিসকাউন্ট, গ্যালারি ইমেজ এবং ভিডিও সফলভাবে সেভ হয়েছে!",
       data: {
         title: p.productNameEn,
+        sku: primarySku,
+        variantsSku: variantSkus,
         retailPrice,
         priceSample,
         imagesCount: imagesArray.length,
