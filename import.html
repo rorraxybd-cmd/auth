@@ -8,7 +8,6 @@
     <link rel="icon" type="image/png" href="https://pub-508ef1e45bab487aadde85a1dba202c4.r2.dev/rorraxyfree/mr%20masudar%20logo%20(3).png">
     <script src="/ecosystem-core.js"></script>
 
-    <!-- কঠোর সিকিউরিটি গার্ড: ভেরিফাই এবং মাস্টার পাসওয়ার্ড দেওয়া না থাকলে সরাসরি index.html এ পাঠিয়ে দেবে -->
     <script>
         (function() {
             const v1 = localStorage.getItem('rorraxy_admin_verified');
@@ -169,7 +168,16 @@
         text-transform: none !important; background: #040406;
       }
 
-      /* 9:16 Luxury Sharp Reels Preview Card */
+      .sku-badge-box {
+        background: rgba(212, 175, 55, 0.08);
+        border-radius: 8px;
+        padding: 8px 10px;
+        margin-top: 6px;
+        font-size: 0.62rem;
+        color: var(--gold-solid);
+        word-break: break-word;
+      }
+
       .reels-preview-strip {
         display: flex;
         gap: 10px;
@@ -242,7 +250,6 @@
     
     <form id="cjImportForm">
       
-      <!-- সিজে প্রোডাক্ট লিংক ইনপুট -->
       <div class="cj-form-group">
         <label for="cjProductUrl">CJ PRODUCT LINK (URL)</label>
         <div style="display: flex; gap: 8px;">
@@ -251,7 +258,6 @@
         </div>
       </div>
 
-      <!-- প্রোডাক্ট আইডি বক্স -->
       <div class="cj-form-group" style="display: flex; gap: 8px; align-items: flex-end;">
         <div style="flex: 1;">
           <label for="cjProductId">CJ PRODUCT ID (PID)</label>
@@ -260,13 +266,11 @@
         <button type="button" id="previewBtn" onclick="fetchProductPreview()" class="cj-btn-secondary" style="height: 41px; background: rgba(212, 175, 55, 0.25); color: var(--gold-solid);">PREVIEW</button>
       </div>
 
-      <!-- ম্যানুয়াল ভিডিও লিংক ইনপুট বক্স -->
       <div class="cj-form-group">
         <label for="manualVideoUrl">GALLERY VIDEO URL</label>
         <input type="text" id="manualVideoUrl" placeholder="PASTE DIRECT VIDEO MP4 LINK..." style="text-transform: none;">
       </div>
 
-      <!-- সার্বজনীন কান্ট্রি ও ডিসকাউন্ট ড্রপডাউন সেকশন -->
       <div class="cj-form-row">
         <div class="cj-form-group">
           <label for="targetCountry">TARGET COUNTRY & FLAG</label>
@@ -300,7 +304,6 @@
         </div>
       </div>
 
-      <!-- ক্যাটাগরি সিলেকশন ট্রিগার বাটন -->
       <div class="cj-form-group">
         <label>PRODUCT CATEGORY</label>
         <div id="categoryPickerTrigger" class="category-picker-trigger">
@@ -313,13 +316,12 @@
         <input type="hidden" id="selectedCategoryValue" required>
       </div>
 
-      <!-- লাইভ থাম্বনেইল প্রিভিউ বক্স -->
       <div id="productPreviewBox" style="display: none; background: #000000; border-radius: 12px; padding: 12px; margin-bottom: 14px;">
         <div style="font-size: 0.68rem; font-weight: 700; color: var(--gold-solid); margin-bottom: 6px; text-transform: uppercase;">Product Preview (CJ Direct Gallery)</div>
         <div id="previewTitle" style="font-size: 0.72rem; color: var(--text-white); font-weight: 600; margin-bottom: 8px; line-height: 1.3;"></div>
         <div id="previewPrice" style="font-size: 0.65rem; color: var(--text-gray); margin-bottom: 8px;"></div>
-        
         <div id="previewSizes" style="font-size: 0.62rem; color: #00ff80; margin-bottom: 8px; font-weight: 600;"></div>
+        <div id="previewSkuBox" class="sku-badge-box" style="display: none;"></div>
 
         <div style="font-size: 0.62rem; font-weight: 700; color: var(--text-gray); margin: 8px 0 4px 0;">GALLERY IMAGES:</div>
         <div id="previewImagesGrid" class="reels-preview-strip"></div>
@@ -355,12 +357,10 @@
   </div>
 </div>
 
-<!-- Centered Transparent Category Overlay Menu -->
 <div id="categoryTransparentOverlay" class="category-transparent-overlay">
   <div class="seller-fullscreen-container">
     <div class="category-fullscreen-view" id="categoryMainListView">
       
-      <!-- ১. WOMEN'S FASHION -->
       <div class="accordion-category-box" id="cat-women">
         <div class="accordion-header" onclick="toggleAccordion('cat-women')">
           <div class="accordion-title-wrap">
@@ -385,7 +385,6 @@
         </div>
       </div>
 
-      <!-- ২. MEN'S FASHION -->
       <div class="accordion-category-box" id="cat-men">
         <div class="accordion-header" onclick="toggleAccordion('cat-men')">
           <div class="accordion-title-wrap">
@@ -405,7 +404,6 @@
         </div>
       </div>
 
-      <!-- ৩. GIRLS' FASHION -->
       <div class="accordion-category-box" id="cat-girls">
         <div class="accordion-header" onclick="toggleAccordion('cat-girls')">
           <div class="accordion-title-wrap">
@@ -430,7 +428,6 @@
         </div>
       </div>
 
-      <!-- ৪. BOYS' FASHION -->
       <div class="accordion-category-box" id="cat-boys">
         <div class="accordion-header" onclick="toggleAccordion('cat-boys')">
           <div class="accordion-title-wrap">
@@ -450,7 +447,6 @@
         </div>
       </div>
 
-      <!-- ৫. MATCHING SETS -->
       <div class="accordion-category-box" id="cat-matching">
         <div class="accordion-header" onclick="toggleAccordion('cat-matching')">
           <div class="accordion-title-wrap">
@@ -475,7 +471,6 @@
         </div>
       </div>
 
-      <!-- ৬. LUXURY GIFTS -->
       <div class="accordion-category-box" id="cat-gifts">
         <div class="accordion-header" onclick="toggleAccordion('cat-gifts')">
           <div class="accordion-title-wrap">
@@ -496,7 +491,6 @@
         </div>
       </div>
 
-      <!-- ৭. MOTHER & BABY -->
       <div class="accordion-category-box" id="cat-mother">
         <div class="accordion-header" onclick="toggleAccordion('cat-mother')">
           <div class="accordion-title-wrap">
@@ -645,6 +639,7 @@
     const previewTitle = document.getElementById('previewTitle');
     const previewPrice = document.getElementById('previewPrice');
     const previewSizes = document.getElementById('previewSizes');
+    const previewSkuBox = document.getElementById('previewSkuBox');
     const previewImagesGrid = document.getElementById('previewImagesGrid');
     const previewVideoContainer = document.getElementById('previewVideoContainer');
     const previewBtn = document.getElementById('previewBtn');
@@ -653,6 +648,8 @@
     previewTitle.innerHTML = 'Loading product details from CJ...';
     previewPrice.innerHTML = '';
     previewSizes.innerHTML = '';
+    previewSkuBox.style.display = 'none';
+    previewSkuBox.innerHTML = '';
     previewImagesGrid.innerHTML = '';
     previewVideoContainer.innerHTML = '';
     previewBtn.disabled = true;
@@ -686,6 +683,14 @@
           previewSizes.innerHTML = `Available Sizes / Variants: ${result.data.sizes.join(', ')}`;
         } else {
           previewSizes.innerHTML = `Available Sizes: Standard / Free Size`;
+        }
+
+        const primarySku = result.data.sku || '';
+        const variantsSku = result.data.variantsSku || [];
+        if (primarySku || variantsSku.length > 0) {
+          const variantLines = variantsSku.map(v => `${v.variant}: <strong>${v.sku}</strong>`).join('  |  ');
+          previewSkuBox.style.display = 'block';
+          previewSkuBox.innerHTML = `Primary SKU: <strong>${primarySku}</strong>` + (variantLines ? `<br>Variant SKUs: ${variantLines}` : '');
         }
 
         renderPreviewGallery(galleryList);
@@ -765,10 +770,13 @@
           renderPreviewGallery(result.data.imagesArray);
         }
 
+        const savedVariantsCount = Array.isArray(result.data?.variantsSku) ? result.data.variantsSku.length : 1;
+
         statusDiv.style.background = 'rgba(0, 255, 128, 0.08)';
         statusDiv.style.color = '#00ff80';
         statusDiv.innerHTML = `✓ ${result.message}<br><br>
           <strong>Product:</strong> ${result.data.title}<br>
+          <strong>Primary SKU:</strong> ${result.data.sku || '-'} (${savedVariantsCount} Variant SKUs Synced)<br>
           <strong>Category:</strong> ${category.toUpperCase()}<br>
           <strong>Target Country:</strong> ${targetCountry.toUpperCase()}<br>
           <strong>Discount:</strong> ${discountOffer ? discountOffer + '% OFF' : 'NO DISCOUNT'}<br>
